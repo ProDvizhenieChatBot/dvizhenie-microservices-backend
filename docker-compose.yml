@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: charity_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file: .env
+    networks:
+      - charity_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:RELEASE.2023-09-07T02-05-02Z
+    container_name: minio_storage
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    env_file: .env # Requires MINIO_ROOT_USER & MINIO_ROOT_PASSWORD
+    volumes:
+      - minio_data:/data
+    networks:
+      - charity_network
+    restart: unless-stopped
+
+  api-service:
+    build:
+      context: ./services/api_service
+    container_name: api_service
+    depends_on:
+      db: { condition: service_healthy }
+    env_file: .env
+    networks:
+      - charity_network
+    restart: unless-stopped
+    # The gateway will expose the port, not the service itself
+    # ports:
+    #  - "8001:8000"
+
+  bot-service:
+    build:
+      context: ./services/bot_service
+    container_name: bot_service
+    depends_on:
+      - api-service
+    env_file: .env
+    networks:
+      - charity_network
+    restart: unless-stopped
+
+  file-storage-service:
+    build:
+      context: ./services/file_storage_service
+    container_name: file_service
+    depends_on:
+      db: { condition: service_healthy }
+      minio: { condition: service_started } # 'service_started' is appropriate here
+    env_file: .env
+    networks:
+      - charity_network
+    restart: unless-stopped
+    # The gateway will expose the port, not the service itself
+    # ports:
+    #  - "8002:8000"
+
+  gateway:
+    build:
+      context: ./nginx
+    container_name: gateway
+    ports:
+      - "8000:80" # Map host 8000 to container 80 for simplicity
+    networks:
+      - charity_network
+    depends_on:
+      - api-service
+      - file-storage-service
+    restart: always
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  charity_network:
+    driver: bridge

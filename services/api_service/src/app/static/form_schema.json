@@ -1,0 +1,38 @@
+{
+  "name": "Анкета Подопечного MVP v2",
+  "version": "1.2",
+  "steps": [
+    {
+      "step_id": "consent",
+      "title": "Согласие на обработку данных",
+      "fields": [
+        {
+          "field_id": "consent_agreement",
+          "type": "single_choice_buttons",
+          "label": "Я даю согласие на обработку персональных данных (152-ФЗ).",
+          "required": true,
+          "options": ["✅ Согласен", "❌ Отказываюсь"]
+        }
+      ],
+      "next_step_logic": {
+        "on_value": {
+          "❌ Отказываюсь": "terminate"
+        },
+        "default": "applicantRole"
+      }
+    },
+    {
+      "step_id": "applicantRole",
+      "title": "Статус заявителя",
+      "fields": [
+        {
+          "field_id": "applicant_role",
+          "type": "single_choice_buttons",
+          "label": "Кто заполняет заявку?",
+          "required": true,
+          "options": ["Я и есть подопечный", "Мать/отец", "Опекун"]
+        }
+      ]
+    }
+  ]
+}

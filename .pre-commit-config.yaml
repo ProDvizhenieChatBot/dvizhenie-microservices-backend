@@ -1,0 +1,94 @@
+# .pre-commit-config.yaml
+fail_fast: true
+
+repos:
+  # 1. Non-Python hooks that can run from the root
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        types_or: [yaml, json]
+
+  # 2. Python hooks, configured per-service
+  - repo: local
+    hooks:
+      # --- API Service ---
+      - id: api-service-ruff-format
+        name: 'API Service: Ruff Format'
+        entry: sh -c 'cd services/api_service && uv run ruff format "$@"' --
+        language: system
+        types: [python]
+        files: ^services/api_service/
+      - id: api-service-ruff-check
+        name: 'API Service: Ruff Check'
+        entry: sh -c 'cd services/api_service && uv run ruff check --fix "$@"' --
+        language: system
+        types: [python]
+        files: ^services/api_service/
+      - id: api-service-pyright
+        name: 'API Service: Pyright'
+        entry: sh -c 'cd services/api_service && uv run pyright'
+        language: system
+        types: [python]
+        files: ^services/api_service/
+        pass_filenames: false
+      - id: api-service-uv-lock-check
+        name: 'API Service: Check uv.lock'
+        entry: sh -c 'cd services/api_service && uv sync --check'
+        language: system
+        files: ^services/api_service/(pyproject\.toml|uv\.lock)$
+        pass_filenames: false
+
+      # --- Bot Service ---
+      - id: bot-service-ruff-format
+        name: 'Bot Service: Ruff Format'
+        entry: sh -c 'cd services/bot_service && uv run ruff format "$@"' --
+        language: system
+        types: [python]
+        files: ^services/bot_service/
+      - id: bot-service-ruff-check
+        name: 'Bot Service: Ruff Check'
+        entry: sh -c 'cd services/bot_service && uv run ruff check --fix "$@"' --
+        language: system
+        types: [python]
+        files: ^services/bot_service/
+      - id: bot-service-pyright
+        name: 'Bot Service: Pyright'
+        entry: sh -c 'cd services/bot_service && uv run pyright'
+        language: system
+        types: [python]
+        files: ^services/bot_service/
+        pass_filenames: false
+      - id: bot-service-uv-lock-check
+        name: 'Bot Service: Check uv.lock'
+        entry: sh -c 'cd services/bot_service && uv sync --check'
+        language: system
+        files: ^services/bot_service/(pyproject\.toml|uv\.lock)$
+        pass_filenames: false
+
+      # --- File Storage Service ---
+      - id: file-service-ruff-format
+        name: 'File Service: Ruff Format'
+        entry: sh -c 'cd services/file_storage_service && uv run ruff format "$@"' --
+        language: system
+        types: [python]
+        files: ^services/file_storage_service/
+      - id: file-service-ruff-check
+        name: 'File Service: Ruff Check'
+        entry: sh -c 'cd services/file_storage_service && uv run ruff check --fix "$@"' --
+        language: system
+        types: [python]
+        files: ^services/file_storage_service/
+      - id: file-service-pyright
+        name: 'File Service: Pyright'
+        entry: sh -c 'cd services/file_storage_service && uv run pyright'
+        language: system
+        types: [python]
+        files: ^services/file_storage_service/
+        pass_filenames: false
+      - id: file-service-uv-lock-check
+        name: 'File Service: Check uv.lock'
+        entry: sh -c 'cd services/file_storage_service && uv sync --check'
+        language: system
+        files: ^services/file_storage_service/(pyproject\.toml|uv\.lock)$
+        pass_filenames: false
