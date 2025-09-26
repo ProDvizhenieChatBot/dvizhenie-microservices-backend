@@ -2,7 +2,9 @@ import uuid
 
 from fastapi import APIRouter
 
+
 router = APIRouter()
+
 
 @router.post('/telegram')
 async def create_telegram_session():

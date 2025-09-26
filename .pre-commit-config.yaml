@@ -14,26 +14,28 @@ repos:
     hooks:
       # --- API Service ---
       - id: api-service-ruff-format
-        name: 'API Service: Ruff Format'
-        entry: sh -c 'cd services/api_service && uv run ruff format "$@"' --
+        name: "API Service: Ruff Format"
+        entry: uv run --with ruff ruff format
         language: system
         types: [python]
         files: ^services/api_service/
       - id: api-service-ruff-check
-        name: 'API Service: Ruff Check'
-        entry: sh -c 'cd services/api_service && uv run ruff check --fix "$@"' --
+        name: "API Service: Ruff Check"
+        entry: uv run --with ruff ruff check --fix
         language: system
         types: [python]
         files: ^services/api_service/
       - id: api-service-pyright
-        name: 'API Service: Pyright'
-        entry: sh -c 'cd services/api_service && uv run pyright'
+        name: "API Service: Pyright"
+        # CORRECTED: cd into the service directory first
+        entry: sh -c 'cd services/api_service && uv run --with pyright pyright'
         language: system
         types: [python]
+        # CORRECTED: Fixed typo from api_sertvice to api_service
         files: ^services/api_service/
         pass_filenames: false
       - id: api-service-uv-lock-check
-        name: 'API Service: Check uv.lock'
+        name: "API Service: Check uv.lock"
         entry: sh -c 'cd services/api_service && uv sync --check'
         language: system
         files: ^services/api_service/(pyproject\.toml|uv\.lock)$
@@ -41,26 +43,27 @@ repos:
 
       # --- Bot Service ---
       - id: bot-service-ruff-format
-        name: 'Bot Service: Ruff Format'
-        entry: sh -c 'cd services/bot_service && uv run ruff format "$@"' --
+        name: "Bot Service: Ruff Format"
+        entry: uv run --with ruff ruff format
         language: system
         types: [python]
         files: ^services/bot_service/
       - id: bot-service-ruff-check
-        name: 'Bot Service: Ruff Check'
-        entry: sh -c 'cd services/bot_service && uv run ruff check --fix "$@"' --
+        name: "Bot Service: Ruff Check"
+        entry: uv run --with ruff ruff check --fix
         language: system
         types: [python]
         files: ^services/bot_service/
       - id: bot-service-pyright
-        name: 'Bot Service: Pyright'
-        entry: sh -c 'cd services/bot_service && uv run pyright'
+        name: "Bot Service: Pyright"
+        # CORRECTED: cd into the service directory first
+        entry: sh -c 'cd services/bot_service && uv run --with pyright pyright'
         language: system
         types: [python]
         files: ^services/bot_service/
         pass_filenames: false
       - id: bot-service-uv-lock-check
-        name: 'Bot Service: Check uv.lock'
+        name: "Bot Service: Check uv.lock"
         entry: sh -c 'cd services/bot_service && uv sync --check'
         language: system
         files: ^services/bot_service/(pyproject\.toml|uv\.lock)$
@@ -68,26 +71,27 @@ repos:
 
       # --- File Storage Service ---
       - id: file-service-ruff-format
-        name: 'File Service: Ruff Format'
-        entry: sh -c 'cd services/file_storage_service && uv run ruff format "$@"' --
+        name: "File Service: Ruff Format"
+        entry: uv run --with ruff ruff format
         language: system
         types: [python]
         files: ^services/file_storage_service/
       - id: file-service-ruff-check
-        name: 'File Service: Ruff Check'
-        entry: sh -c 'cd services/file_storage_service && uv run ruff check --fix "$@"' --
+        name: "File Service: Ruff Check"
+        entry: uv run --with ruff ruff check --fix
         language: system
         types: [python]
         files: ^services/file_storage_service/
       - id: file-service-pyright
-        name: 'File Service: Pyright'
-        entry: sh -c 'cd services/file_storage_service && uv run pyright'
+        name: "File Service: Pyright"
+        # CORRECTED: cd into the service directory first
+        entry: sh -c 'cd services/file_storage_service && uv run --with pyright pyright'
         language: system
         types: [python]
         files: ^services/file_storage_service/
         pass_filenames: false
       - id: file-service-uv-lock-check
-        name: 'File Service: Check uv.lock'
+        name: "File Service: Check uv.lock"
         entry: sh -c 'cd services/file_storage_service && uv sync --check'
         language: system
         files: ^services/file_storage_service/(pyproject\.toml|uv\.lock)$

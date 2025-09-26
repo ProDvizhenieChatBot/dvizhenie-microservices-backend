@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+
 router = APIRouter()
 
 # TODO: Implement Admin endpoints for application management
@@ -12,7 +13,8 @@ router = APIRouter()
 # PATCH /applications/{token}
 # POST /applications/{token}
 
-@router.get("/")
+
+@router.get('/')
 async def get_applications_placeholder():
     # This is a placeholder for admin functionality
-    return {"message": "TODO: Implement GET /admin/applications endpoint"}
+    return {'message': 'TODO: Implement GET /admin/applications endpoint'}

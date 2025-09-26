@@ -2,6 +2,7 @@ import httpx
 
 from app.core.config import settings
 
+
 class ApiClient:
     def __init__(self, base_url: str):
         self.base_url = base_url
@@ -19,11 +20,12 @@ class ApiClient:
                 data = response.json()
                 return data.get('resume_token')
             except httpx.HTTPStatusError as e:
-                print(f"HTTP error occurred: {e}")
+                print(f'HTTP error occurred: {e}')
                 return None
             except Exception as e:
-                print(f"An unexpected error occurred: {e}")
+                print(f'An unexpected error occurred: {e}')
                 return None
+
 
 # Singleton instance of the API client
 api_client = ApiClient(base_url=settings.API_SERVICE_URL)

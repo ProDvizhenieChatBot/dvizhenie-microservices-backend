@@ -12,6 +12,7 @@ class Application(Base):
     data = Column(JSON, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
+
 # TODO: Define other necessary SQLAlchemy models here
 # - User (for Mini App/Web Widget users)
 # - AdminUser (for admin panel users)

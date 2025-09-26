@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.api import applications, auth, schemas, sessions
 from app.core.config import settings
 
+
 app = FastAPI(title=settings.APP_TITLE)
 
 # Register API routers

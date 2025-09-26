@@ -5,7 +5,9 @@ from aiogram.types import WebAppInfo
 from app.core.config import settings
 from app.internal_clients.api_client import api_client
 
+
 router = Router()
+
 
 @router.message(CommandStart())
 async def start_handler(message: types.Message):
@@ -19,7 +21,7 @@ async def start_handler(message: types.Message):
 
     if token:
         # Append the token to the Mini App URL
-        mini_app_url = f"{settings.MINI_APP_URL}?token={token}"
+        mini_app_url = f'{settings.MINI_APP_URL}?token={token}'
 
         keyboard = types.InlineKeyboardMarkup(
             inline_keyboard=[
@@ -37,6 +39,4 @@ async def start_handler(message: types.Message):
             reply_markup=keyboard,
         )
     else:
-        await message.answer(
-            "Произошла ошибка при создании сессии. Пожалуйста, попробуйте позже."
-        )
+        await message.answer('Произошла ошибка при создании сессии. Пожалуйста, попробуйте позже.')

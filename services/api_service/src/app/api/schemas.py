@@ -3,11 +3,13 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 
+
 router = APIRouter()
 
 # TODO: This logic should be replaced. The schema must be fetched from the database
 # from a 'FormSchema' table. This file is a temporary solution.
 STATIC_SCHEMA_PATH = Path(__file__).parent.parent / 'static' / 'form_schema.json'
+
 
 @router.get('/schema/active')
 def get_active_form_schema():
@@ -20,6 +22,7 @@ def get_active_form_schema():
 
     with open(STATIC_SCHEMA_PATH, encoding='utf-8') as f:
         return json.load(f)
+
 
 # TODO: Implement Admin endpoints for schema management
 # GET /admin/forms/schemas

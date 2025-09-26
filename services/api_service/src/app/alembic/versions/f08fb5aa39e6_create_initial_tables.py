@@ -5,10 +5,12 @@ Revises:
 Create Date: 2025-09-26 10:00:00.000000
 
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
+
 
 # revision identifiers, used by Alembic.
 revision: str = 'f08fb5aa39e6'
@@ -24,7 +26,12 @@ def upgrade() -> None:
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('status', sa.String(), nullable=False),
         sa.Column('data', sa.JSON(), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+        sa.Column(
+            'created_at',
+            sa.DateTime(timezone=True),
+            server_default=sa.text('now()'),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint('id'),
     )
     op.create_index(op.f('ix_applications_id'), 'applications', ['id'], unique=False)
