@@ -1,44 +1,63 @@
-### **Phase 1: Foundation & Project Restructuring**
-*   **Task 1.1: Create New Directory Structure.**
-    *   Create the `services/` directory.
-    *   Create subdirectories for `api_service`, `bot_service`, and `file_storage_service`.
-    *   Move relevant code from the old monolith `src/` into the new service directories as a starting point.
-*   **Task 1.2: Update `docker-compose.yml`.**
-    *   Implement the new `docker-compose.yml` with all services defined.
-    *   Configure the database and the new MinIO service.
-*   **Task 1.3: Create Dockerfiles & Basic Apps.**
-    *   Create a `Dockerfile` and a minimal "Hello World" FastAPI app inside each service directory to ensure the orchestration works and services can communicate.
-*   **Task 1.4: Configure API Gateway (NGINX).**
-    *   Set up the basic `nginx.conf` with routing rules to the new services.
+### **Phase 1: Implement Core API Service Logic**
 
-### **Phase 2: Core Logic Migration (API Service)**
-*   **Task 2.1: Migrate Database Models & Alembic.**
-    *   Move `db_models.py` and the `alembic` configuration to the `api_service`.
-    *   Create new models: `User`, `FormSchema`, `ApplicationFileLink`. Create new Alembic migrations.
-*   **Task 2.2: Implement Application Endpoints.**
-    *   Re-implement the logic for creating and retrieving applications. Focus on the core data logic first.
-*   **Task 2.3: Implement Session & Auth Logic.**
-    *   Create the session endpoints for Telegram (`/verify-user`, `/sessions/telegram`).
-    *   The `MINI_APP_URL` should be retrieved from environment variables.
-*   **Task 2.4: Implement DB-backed Form Schema.**
-    *   Create the endpoints (`/forms/schema/active` and the admin CRUD endpoints) to serve the form schema from the `FormSchema` table.
+This is the highest priority phase, as all other services depend on a functional API.
 
-### **Phase 3: Bot & File Service Implementation**
-*   **Task 3.1: Rewrite Bot Service Logic.**
-    *   Remove all FSM and form-processing logic from the old bot code.
-    *   Implement the new logic: handle `/start`, call the `api-service` to create a session, and return the Mini App button.
-    *   Implement the internal `/notify` endpoint.
-*   **Task 3.2: Build the File Service.**
-    *   Create the FastAPI app for the `file-storage-service`.
-    *   Integrate the `boto3` (or equivalent) S3 client.
-    *   Implement the `/files` upload endpoint that saves files to MinIO.
-    *   Implement the `/files/{id}/download-link` endpoint that generates pre-signed URLs.
+*   **Task 1.1: Implement Application Endpoints.**
+    *   `[ ]` **Create Application:** Implement `POST /applications` to create a new application entry in the database.
+    *   `[ ]` **Update Application:** Implement `PATCH /applications/{id}` to save partial form data, allowing users to continue later.
+    *   `[ ]` **Get Application:** Implement `GET /applications/{id}` for a user to retrieve their application data using a session token.
+    *   `[ ]` **Admin Endpoints:** Implement secure endpoints for admins to list, view, and manage the status of all applications.
 
-### **Phase 4: Finalizing Admin and Web Support**
-*   **Task 4.1: Implement Admin Authentication.**
-    *   Add OAuth 2.0 logic to the `api_service` for admin panel login.
-*   **Task 4.2: Implement Web Widget Session Logic.**
-    *   Add the "Magic Link" endpoints (`/sessions/web`) to the `api_service`.
-    *   This will require integrating an email sending library/service.
-*   **Task 4.3: Final Testing & Integration.**
-    *   Perform end-to-end testing of all user flows: Telegram Mini App, Web Widget, and Admin Panel.
+*   **Task 1.2: Implement Session & Authentication Logic.**
+    *   `[ ]` **Telegram Sessions:** Enhance `POST /sessions/telegram`. Instead of returning a random token, it should create a draft `Application` in the database and return a JWT or secure token associated with that draft.
+    *   `[ ]` **Admin Authentication:** Implement OAuth2 (e.g., Password Flow) on the `/auth` endpoints to secure the admin panel and endpoints.
+
+*   **Task 1.3: Make Form Schema Database-Backed.**
+    *   `[ ]` **Create DB Model:** Add a `FormSchema` model to `db_models.py` to store form schemas in the database.
+    *   `[ ]` **Create Alembic Migration:** Generate a new migration to create the `form_schemas` table.
+    *   `[ ]` **Update Endpoint Logic:** Modify the `GET /forms/schema/active` endpoint to fetch the latest active schema from the database instead of the static JSON file.
+    *   `[ ]` **Implement Admin CRUD for Schemas:** Create secure endpoints for administrators to create, view, and update form schemas.
+
+---
+
+### **Phase 2: Build Out File Storage Service**
+
+This phase involves integrating the file service with a real object storage backend (MinIO).
+
+*   **Task 2.1: Integrate S3 Client.**
+    *   `[ ]` Add and configure an S3 client library (e.g., `boto3`) to connect to the MinIO container using credentials from environment variables.
+    *   `[ ]` Create a utility/client to initialize the MinIO bucket (`charity-files`) on service startup if it doesn't exist.
+
+*   **Task 2.2: Implement File Upload Logic.**
+    *   `[ ]` In the `POST /files/` endpoint, implement the logic to stream the `UploadFile` content directly to the MinIO bucket.
+    *   `[ ]` Store metadata about the file (e.g., original filename, owner, application ID) in the PostgreSQL database via the API service.
+
+*   **Task 2.3: Implement Pre-signed URL Generation.**
+    *   `[ ]` In the `GET /files/{file_id}/download-link` endpoint, implement the logic to generate a temporary, secure, pre-signed URL for the requested file from MinIO.
+
+---
+
+### **Phase 3: Finalize Bot and Implement Web Support**
+
+With the backend services functional, the client-facing parts can be fully implemented.
+
+*   **Task 3.1: Refine Bot Service Integration.**
+    *   `[ ]` Update the `/start` command handler in `bot_service` to correctly use the now-functional session creation endpoint from the `api_service`.
+    *   `[ ]` Implement the internal `/notify` endpoint in the bot, which can be called by the `api_service` to send status updates to users (e.g., "Your application has been received").
+
+*   **Task 3.2: Implement Web Widget Session Logic.**
+    *   `[ ]` Implement the "Magic Link" logic in `POST /sessions/web` in the `api_service`.
+    *   `[ ]` This will require integrating an email-sending library/service to send a unique login link to the user's email address.
+
+---
+
+### **Phase 4: Testing and Finalization**
+
+The final phase involves ensuring all parts of the system work together correctly.
+
+*   `[ ]` **End-to-End Testing:** Perform comprehensive testing of all user flows:
+    *   Filling out and submitting an application via the Telegram Mini App.
+    *   Uploading and downloading documents.
+    *   Admin viewing and managing applications.
+*   `[ ]` **Review and Refactor:** Clean up code, add missing documentation, and optimize where necessary.
+*   `[ ]` **Prepare for Deployment:** Finalize production configurations and write deployment instructions.
