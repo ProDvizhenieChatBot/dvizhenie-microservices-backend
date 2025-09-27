@@ -1,9 +1,11 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile
+
 
 router = APIRouter()
 
+
 @router.post('/')
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile):
     """
     Accepts a file, saves it to MinIO, and returns a unique file_id.
     """
@@ -16,6 +18,7 @@ async def upload_file(file: UploadFile = File(...)):
         'filename': file.filename,
         'content_type': file.content_type,
     }
+
 
 @router.get('/{file_id}/download-link')
 async def get_download_link(file_id: str):
