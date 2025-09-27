@@ -56,7 +56,7 @@ async def create_draft_application(
 
     # Add it to the session and commit to the database
     session.add(new_application)
-    await session.flush()
+    await session.commit()
     await session.refresh(new_application)  # Refresh to get the DB-assigned ID
 
     return new_application
@@ -91,7 +91,7 @@ async def save_application_progress(
     # Update the application's data with the payload
     db_application.data = application_in.data
     session.add(db_application)
-    await session.flush()
+    await session.commit()
     await session.refresh(db_application)
 
     return db_application
