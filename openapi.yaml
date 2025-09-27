@@ -1,0 +1,408 @@
+# --- Example OpenAPI spec ---
+openapi: 3.0.3
+info:
+  title: API для благотворительного фонда "Движение Жизни"
+  description: |-
+    Микросервисная API для обработки заявок подопечных.
+    Предоставляет эндпоинты для управления сессиями, анкетами, файлами и администрирования.
+    Запросы проходят через API Gateway (Nginx), который маршрутизирует их на:
+    - `api-service` (основная логика)
+    - `file-storage-service` (работа с файлами)
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Локальный сервер для разработки
+
+tags:
+  - name: Authentication
+    description: Аутентификация администраторов через Yandex OAuth.
+  - name: Sessions
+    description: Создание сессий для пользователей (Telegram Bot).
+  - name: Form Schemas
+    description: Получение и управление схемами анкет.
+  - name: Applications
+    description: Создание, обновление и управление заявками.
+  - name: Files
+    description: Загрузка файлов и получение ссылок на скачивание.
+  - name: Health Checks
+    description: Проверка состояния сервисов.
+
+paths:
+  # --- Authentication ---
+  /auth/yandex/login:
+    get:
+      tags:
+        - Authentication
+      summary: Перенаправление на страницу входа Яндекса
+      description: |-
+        Начальная точка для OAuth-авторизации.
+        Браузер администратора должен быть перенаправлен на этот эндпоинт.
+        Сервер ответит редиректом (307) на страницу авторизации Яндекса.
+      responses:
+        "307":
+          description: Временный редирект на URL Яндекса для авторизации.
+
+  /auth/yandex/callback:
+    get:
+      tags:
+        - Authentication
+      summary: Обработка callback от Яндекса
+      description: |-
+        Этот эндпоинт вызывается Яндексом после успешной авторизации пользователя.
+        Сервер обменивает полученный `code` на `access_token` Яндекса, запрашивает данные пользователя,
+        и если все успешно, возвращает внутренний JWT-токен для доступа к API.
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Временный код авторизации от Яндекса.
+      responses:
+        "200":
+          description: Успешная аутентификация, возвращен внутренний JWT.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "400":
+          description: Ошибка при обмене кода на токен.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # --- Sessions ---
+  /sessions/telegram:
+    post:
+      tags:
+        - Sessions
+      summary: Создание сессии для Telegram-бота
+      description: |-
+        Вызывается `bot-service` при старте диалога с пользователем.
+        Создает черновик заявки в системе и возвращает уникальный токен сессии,
+        который используется в URL для Mini App.
+      responses:
+        "200":
+          description: Сессия успешно создана.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+
+  # --- Form Schemas ---
+  /forms/schema/active:
+    get:
+      tags:
+        - Form Schemas
+      summary: Получить активную схему анкеты
+      description: Возвращает актуальную JSON-схему для динамической отрисовки анкеты в Mini App.
+      responses:
+        "200":
+          description: Успешный ответ со схемой анкеты.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormSchema"
+        "404":
+          description: Активная схема не найдена.
+
+  # --- Applications (User-facing) ---
+  /applications/me:
+    get:
+      tags:
+        - Applications
+      summary: Получить данные своей текущей заявки
+      description: Mini App использует этот эндпоинт для получения данных анкеты и продолжения заполнения. Требует токен сессии.
+      security:
+        - UserSessionSecurity: []
+      responses:
+        "200":
+          description: Данные заявки.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+    patch:
+      tags:
+        - Applications
+      summary: Сохранить прогресс заполнения заявки
+      description: Mini App периодически отправляет обновленные данные анкеты для сохранения на сервере.
+      security:
+        - UserSessionSecurity: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationUpdate"
+      responses:
+        "200":
+          description: Заявка успешно обновлена.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+
+  # --- Applications (Admin-facing) ---
+  /applications:
+    get:
+      tags:
+        - Applications
+      summary: (Админ) Получить список всех заявок
+      security:
+        - AdminJWTSecurity: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ApplicationStatus"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Список заявок.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Application"
+
+  /applications/{application_id}:
+    get:
+      tags:
+        - Applications
+      summary: (Админ) Получить детальную информацию по заявке
+      security:
+        - AdminJWTSecurity: []
+      parameters:
+        - name: application_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Детали заявки.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+    patch:
+      tags:
+        - Applications
+      summary: (Админ) Обновить статус заявки
+      security:
+        - AdminJWTSecurity: []
+      parameters:
+        - name: application_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: "#/components/schemas/ApplicationStatus"
+      responses:
+        "200":
+          description: Статус обновлен.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+
+  # --- Files ---
+  /files/upload:
+    post:
+      tags:
+        - Files
+      summary: Загрузить файл
+      description: Принимает файл и сохраняет его в S3-хранилище (MinIO). Возвращает уникальный ID файла.
+      security:
+        - UserSessionSecurity: [] # Или AdminJWTSecurity, в зависимости от того, кто может загружать
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Файл успешно загружен.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileMetadata"
+
+  /files/{file_id}/download-link:
+    get:
+      tags:
+        - Files
+      summary: Получить временную ссылку на скачивание файла
+      security:
+        - AdminJWTSecurity: [] # Доступ к скачиванию обычно только у админов
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Ссылка для скачивания.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadLinkResponse"
+
+  # --- Health Checks ---
+  /health:
+    get:
+      tags:
+        - Health Checks
+      summary: Проверка состояния сервиса
+      responses:
+        "200":
+          description: Сервис работает.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: Произошла ошибка.
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: bearer
+    SessionResponse:
+      type: object
+      properties:
+        session_token:
+          type: string
+          description: Токен для использования в Mini App.
+          example: "a1b2c3d4-e5f6-7890-a1b2-c3d4e5f67890"
+    FileMetadata:
+      type: object
+      properties:
+        file_id:
+          type: string
+          example: "uuid-of-the-file.pdf"
+        filename:
+          type: string
+          example: "passport.pdf"
+        content_type:
+          type: string
+          example: "application/pdf"
+    DownloadLinkResponse:
+      type: object
+      properties:
+        download_url:
+          type: string
+          format: uri
+    ApplicationStatus:
+      type: string
+      enum: [draft, new, requires_documents, in_progress, completed, rejected]
+    Application:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        status:
+          $ref: "#/components/schemas/ApplicationStatus"
+        data:
+          type: object
+          description: JSON-объект с ответами на вопросы анкеты.
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    ApplicationUpdate:
+      type: object
+      properties:
+        data:
+          type: object
+          description: JSON-объект с обновленными ответами анкеты.
+          additionalProperties: true
+    FormSchema:
+      type: object
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              step_id:
+                type: string
+              title:
+                type: string
+              fields:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    field_id:
+                      type: string
+                    type:
+                      type: string
+                      enum: [single_choice_buttons, text, date, file]
+                    label:
+                      type: string
+                    required:
+                      type: boolean
+                    options:
+                      type: array
+                      items:
+                        type: string
+              next_step_logic:
+                type: object
+
+  securitySchemes:
+    AdminJWTSecurity:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Внутренний JWT, полученный после успешной OAuth-авторизации через Яндекс.
+    UserSessionSecurity:
+      type: http
+      scheme: bearer
+      description: Токен сессии, выданный эндпоинтом /sessions/telegram.
