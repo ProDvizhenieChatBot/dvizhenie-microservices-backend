@@ -12,7 +12,7 @@ RUN groupadd -r app \
  && useradd -r -g app app \
  && chown -R app:app /app \
  && pip install --no-cache-dir --upgrade pip \
- && pip install --no-cache-dir .
+ && pip install --no-cache-dir ".[dev]"
 
 COPY src .
 

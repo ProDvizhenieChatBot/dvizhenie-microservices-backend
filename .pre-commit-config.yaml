@@ -27,11 +27,11 @@ repos:
         files: ^services/api_service/
       - id: api-service-pyright
         name: "API Service: Pyright"
-        # CORRECTED: cd into the service directory first
-        entry: sh -c 'cd services/api_service && uv run --with pyright pyright'
+        # CORRECTED: Use the standard '.[dev]' syntax for local extras.
+        entry: sh -c 'cd services/api_service && uv run --with ".[dev]" pyright'
         language: system
         types: [python]
-        # CORRECTED: Fixed typo from api_sertvice to api_service
+        args: ["--active"]
         files: ^services/api_service/
         pass_filenames: false
       - id: api-service-uv-lock-check
@@ -56,10 +56,11 @@ repos:
         files: ^services/bot_service/
       - id: bot-service-pyright
         name: "Bot Service: Pyright"
-        # CORRECTED: cd into the service directory first
-        entry: sh -c 'cd services/bot_service && uv run --with pyright pyright'
+        # CORRECTED: Use the standard '.[dev]' syntax for local extras.
+        entry: sh -c 'cd services/bot_service && uv run --with ".[dev]" pyright'
         language: system
         types: [python]
+        args: ["--active"]
         files: ^services/bot_service/
         pass_filenames: false
       - id: bot-service-uv-lock-check
@@ -84,10 +85,11 @@ repos:
         files: ^services/file_storage_service/
       - id: file-service-pyright
         name: "File Service: Pyright"
-        # CORRECTED: cd into the service directory first
-        entry: sh -c 'cd services/file_storage_service && uv run --with pyright pyright'
+        # CORRECTED: Use the standard '.[dev]' syntax for local extras.
+        entry: sh -c 'cd services/file_storage_service && uv run --with ".[dev]" pyright'
         language: system
         types: [python]
+        args: ["--active"]
         files: ^services/file_storage_service/
         pass_filenames: false
       - id: file-service-uv-lock-check
