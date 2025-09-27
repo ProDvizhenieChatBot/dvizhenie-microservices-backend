@@ -9,7 +9,7 @@ class Application(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     status = Column(String, default='new', nullable=False)
-    data = Column(JSON, nullable=False)
+    data = Column(JSON, nullable=False, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
