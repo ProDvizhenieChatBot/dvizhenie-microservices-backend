@@ -121,3 +121,9 @@ docker-compose down
 *   `docker-compose.yml`: Файл для оркестрации и запуска всех сервисов проекта.
 *   `.env.example`: Шаблон с необходимыми переменными окружения.
 *   `.pre-commit-config.yaml`: Конфигурация для pre-commit хуков.
+
+## Тестирование API-service
+
+```bash
+uv run pytest services/api_service/ -v
+```
