@@ -1,21 +1,38 @@
-import uuid
+# services/api_service/src/app/api/sessions.py
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi import APIRouter
+from app.core.db import get_async_session
+from app.models.db_models import Application
 
 
 router = APIRouter()
 
 
-@router.post('/telegram')
-async def create_telegram_session():
+@router.post('/telegram', status_code=status.HTTP_201_CREATED)
+async def create_telegram_session(session: AsyncSession = Depends(get_async_session)):
     """
-    TODO: This endpoint should be called by the Bot Service.
-    It should verify the telegram_user_id, create a new application draft
-    if one doesn't exist, and return a unique resume_token.
+    This endpoint is called by the Bot Service when a user starts a conversation.
+
+    It performs two main actions:
+    1.  Creates a new application with a 'draft' status in the database.
+    2.  Returns a unique session token (currently the application ID) that the
+        Mini App will use to identify and save progress for this specific user session.
     """
-    # Placeholder logic
-    resume_token = str(uuid.uuid4())
-    return {'resume_token': resume_token}
+    # 1. Create a new draft application instance
+    new_application = Application(
+        status='draft',
+        data={},  # Initialize with an empty JSON object for form data
+    )
+
+    # 2. Add to session, commit to DB, and refresh to get the new ID
+    session.add(new_application)
+    await session.commit()
+    await session.refresh(new_application)
+
+    # 3. Return the ID as a session token.
+    # TODO: Replace with a secure JWT in the future.
+    return {'session_token': new_application.id}
 
 
 @router.post('/web')
