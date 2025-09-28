@@ -66,9 +66,9 @@ services:
     networks:
       - charity_network
     restart: unless-stopped
-    # The gateway will expose the port, not the service itself
-    # ports:
-    #  - "8002:8000"
+    # temporarily expose the port for testing
+    ports:
+      - "8002:8000"
 
   gateway:
     build:
