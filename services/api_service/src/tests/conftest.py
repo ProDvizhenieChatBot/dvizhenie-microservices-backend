@@ -5,7 +5,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.db import AsyncSessionLocal
+from app.core.db import AsyncSessionLocal, get_async_session
 from app.main import app
 
 
@@ -19,14 +19,24 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture
-async def client() -> AsyncGenerator[AsyncClient, None]:
+async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """
     Fixture that provides an HTTPX client for making requests to the test app.
+    Overrides the database dependency to use the same session as the test.
     """
-    # The 'app' argument is functionally correct, but its type hints are
-    # not perfectly compatible with httpx's expectations. We ignore the error.
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url='http://test',  # type: ignore
-    ) as ac:
-        yield ac
+
+    # Override the database dependency to use our test session
+    async def override_get_async_session():
+        yield db_session
+
+    app.dependency_overrides[get_async_session] = override_get_async_session
+
+    try:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url='http://test',  # type: ignore
+        ) as ac:
+            yield ac
+    finally:
+        # Clean up the override after the test
+        app.dependency_overrides.clear()
