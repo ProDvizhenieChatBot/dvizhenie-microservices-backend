@@ -10,6 +10,7 @@ dependencies = [
     "uvicorn[standard]==0.29.0",
     "pydantic-settings==2.2.1",
     "aioboto3==12.3.0",
+    "types-aioboto3[s3]==15.1.0",
 ]
 
 [project.optional-dependencies]
@@ -19,7 +20,6 @@ dev = [
     "pytest==8.2.2",
     "moto[s3]==5.0.5",
     "pytest-asyncio==0.23.7",
-    "types-aioboto3[s3]==15.1.0",
 ]
 
 [tool.ruff]
@@ -65,7 +65,8 @@ select = [
     "TID",  # flake8-tidy-imports
 ]
 ignore = [
-    "RUF001",  # String contains ambiguous unicode character
+    "RUF001",
+    "B008",
 ]
 fixable = ["ALL"]
 unfixable = []
