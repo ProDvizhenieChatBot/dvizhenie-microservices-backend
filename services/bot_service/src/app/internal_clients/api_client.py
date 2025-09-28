@@ -1,3 +1,4 @@
+# services/bot_service/src/app/internal_clients/api_client.py
 import httpx
 
 from app.core.config import settings
@@ -10,7 +11,7 @@ class ApiClient:
     async def create_telegram_session(self) -> str | None:
         """
         Calls the API service to create a session for a Telegram user.
-        Returns the resume_token if successful, otherwise None.
+        Returns the session_token if successful, otherwise None.
         """
         # TODO: Implement robust error handling (try-except blocks, logging)
         async with httpx.AsyncClient() as client:
@@ -18,7 +19,9 @@ class ApiClient:
                 response = await client.post(f'{self.base_url}/api/v1/sessions/telegram')
                 response.raise_for_status()
                 data = response.json()
-                return data.get('resume_token')
+                # The API now returns 'session_token' which corresponds to the application ID.
+                token = data.get('session_token')
+                return str(token) if token is not None else None
             except httpx.HTTPStatusError as e:
                 print(f'HTTP error occurred: {e}')
                 return None
