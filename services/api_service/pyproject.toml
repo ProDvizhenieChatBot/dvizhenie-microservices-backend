@@ -102,6 +102,7 @@ reportArgumentType = "none"
 reportGeneralTypeIssues = "none"
 
 [tool.pytest.ini_options]
+pythonpath = ["src"]
 asyncio_mode = "auto"
 filterwarnings = [
     "ignore:Please use `import python_multipart` instead.:PendingDeprecationWarning"
