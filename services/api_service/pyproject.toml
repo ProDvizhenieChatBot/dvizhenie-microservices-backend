@@ -106,3 +106,9 @@ asyncio_mode = "auto"
 filterwarnings = [
     "ignore:Please use `import python_multipart` instead.:PendingDeprecationWarning"
 ]
+
+[dependency-groups]
+dev = [
+    # "aiosqlite>=0.20.0",
+    "pytest-asyncio>=0.23.7",
+]

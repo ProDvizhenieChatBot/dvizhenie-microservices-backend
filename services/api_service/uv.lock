@@ -63,6 +63,11 @@ dev = [
     { name = "ruff" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest-asyncio" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = "==1.13.1" },
@@ -80,6 +85,9 @@ requires-dist = [
     { name = "uvicorn", extras = ["standard"], specifier = "==0.29.0" },
 ]
 provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest-asyncio", specifier = ">=0.23.7" }]
 
 [[package]]
 name = "asyncpg"
