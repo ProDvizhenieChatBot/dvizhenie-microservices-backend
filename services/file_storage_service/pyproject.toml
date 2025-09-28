@@ -1,4 +1,3 @@
-# services/file_storage_service/pyproject.toml
 [project]
 name = "file-storage-service"
 version = "0.1.0"
@@ -20,6 +19,7 @@ dev = [
     "pytest==8.2.2",
     "moto[s3]==5.0.5",
     "pytest-asyncio==0.23.7",
+    "boto3==1.34.113", # Added for moto integration tests
 ]
 
 [tool.ruff]
@@ -47,6 +47,7 @@ exclude = [
     "dist",
     "node_modules",
     "venv",
+    "src/tests", # Exclude tests from linting rules if desired
 ]
 
 [tool.ruff.lint]
@@ -65,7 +66,7 @@ select = [
     "TID",  # flake8-tidy-imports
 ]
 ignore = [
-    "RUF001",
+    "RUF001",  # String contains ambiguous unicode character
     "B008",
 ]
 fixable = ["ALL"]
@@ -95,3 +96,10 @@ line-ending = "auto"
 
 [tool.pyright]
 reportCallIssue = false
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
