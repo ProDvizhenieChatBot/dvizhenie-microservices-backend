@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
 
 class FileUploadResponse(BaseModel):
@@ -20,4 +20,16 @@ class FileUploadResponse(BaseModel):
         None,
         description='The MIME type of the file.',
         examples=['application/pdf'],
+    )
+
+
+class FileDownloadResponse(BaseModel):
+    """
+    Represents the response containing a temporary download URL for a file.
+    """
+
+    download_url: HttpUrl = Field(
+        ...,
+        description='A temporary, pre-signed URL to download the file directly from S3 storage.',
+        examples=['http://minio:9000/charity-files/file.pdf?X-Amz-Algorithm=...'],
     )
