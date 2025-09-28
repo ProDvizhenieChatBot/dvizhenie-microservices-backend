@@ -1,4 +1,5 @@
 # services/api_service/src/app/api/applications.py
+# services/api_service/src/app/api/applications.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -60,6 +61,31 @@ async def create_draft_application(
     await session.refresh(new_application)  # Refresh to get the DB-assigned ID
 
     return new_application
+
+
+@router.get(
+    '/{application_id}',
+    response_model=ApplicationResponse,
+    summary='Get application data',
+)
+async def get_application_data(
+    application_id: int,
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Retrieves all data for a specific application by its ID.
+    """
+    query = select(Application).where(Application.id == application_id)
+    result = await session.execute(query)
+    db_application = result.scalar_one_or_none()
+
+    if db_application is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'Application with id {application_id} not found',
+        )
+
+    return db_application
 
 
 @router.patch(
