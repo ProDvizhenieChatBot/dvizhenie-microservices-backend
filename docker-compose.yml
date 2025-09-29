@@ -76,6 +76,7 @@ services:
     container_name: gateway
     ports:
       - "8000:80" # Map host 8000 to container 80 for simplicity
+    env_file: .env
     networks:
       - charity_network
     depends_on:
