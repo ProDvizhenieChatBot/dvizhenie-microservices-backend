@@ -1,4 +1,3 @@
-# services/api_service/src/app/schemas/applications.py
 from datetime import datetime
 from enum import Enum
 from uuid import UUID
@@ -80,3 +79,9 @@ class ApplicationAdmin(BaseModel):
     files: list[ApplicationFileResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ApplicationStatusResponse(BaseModel):
+    """Response schema for getting the status of an application."""
+
+    status: ApplicationStatus

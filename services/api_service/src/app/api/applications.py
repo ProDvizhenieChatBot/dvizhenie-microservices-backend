@@ -1,3 +1,4 @@
+# services/api_service/src/app/api/applications.py
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -14,6 +15,7 @@ from app.schemas.applications import (
     ApplicationAdminUpdate,
     ApplicationPublic,
     ApplicationStatus,
+    ApplicationStatusResponse,
     ApplicationUpdate,
     FileLinkRequest,
 )
@@ -180,11 +182,38 @@ async def update_application_admin(
 
     session.add(db_application)
     await session.commit()
-    await session.refresh(db_application)
+
+    await session.refresh(db_application, attribute_names=['files'])
+
     return db_application
 
 
 # --- Public Endpoints for Mini App ---
+
+
+@router.get(
+    '/{application_uuid}/public/status',
+    response_model=ApplicationStatusResponse,
+    summary='Get the status of a specific application',
+)
+async def get_application_status_public(
+    application_uuid: UUID,
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Retrieves the current status of a single application by its UUID.
+    This is a public endpoint for the web-widget to check status.
+    """
+    query = select(Application.status).where(Application.id == application_uuid)
+    result = await session.execute(query)
+    application_status = result.scalar_one_or_none()
+
+    if application_status is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'Application with id {application_uuid} not found',
+        )
+    return {'status': application_status}
 
 
 @router.get(

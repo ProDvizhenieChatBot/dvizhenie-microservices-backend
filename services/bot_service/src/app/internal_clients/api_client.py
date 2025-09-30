@@ -1,4 +1,3 @@
-# services/bot_service/src/app/internal_clients/api_client.py
 import httpx
 
 from app.core.config import settings
@@ -28,6 +27,31 @@ class ApiClient:
                 return None
             except Exception as e:
                 print(f'An unexpected error occurred while creating session for {telegram_id}: {e}')
+                return None
+
+    async def get_telegram_application_status(self, telegram_id: int) -> str | None:
+        """
+        Calls the API service to get the status of the latest application
+        for a Telegram user.
+        """
+        async with httpx.AsyncClient() as client:
+            try:
+                params = {'telegram_id': telegram_id}
+                response = await client.get(
+                    f'{self.base_url}/api/v1/sessions/telegram/status', params=params
+                )
+
+                if response.status_code == 404:
+                    return 'not_found'
+
+                response.raise_for_status()
+                data = response.json()
+                return data.get('status')
+            except httpx.HTTPStatusError as e:
+                print(f'HTTP error occurred while getting status for {telegram_id}: {e}')
+                return None
+            except Exception as e:
+                print(f'An unexpected error occurred while getting status for {telegram_id}: {e}')
                 return None
 
 
