@@ -1,30 +1,69 @@
-import json
-from pathlib import Path
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy import update
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
-from fastapi import APIRouter, HTTPException
+from app.core.db import get_async_session
+from app.models.db_models import FormSchema
 
 
+# Router for public-facing schema endpoints
 router = APIRouter()
-
-# TODO: This logic should be replaced. The schema must be fetched from the database
-# from a 'FormSchema' table. This file is a temporary solution.
-STATIC_SCHEMA_PATH = Path(__file__).parent.parent / 'static' / 'form_schema.json'
+# Router for admin-only schema management endpoints
+admin_router = APIRouter()
 
 
-@router.get('/schema/active')
-def get_active_form_schema():
+class FormSchemaUpload(BaseModel):
+    version: str
+    schema_data: dict
+
+
+@router.get('/schema/active', response_model=dict)
+async def get_active_form_schema(session: AsyncSession = Depends(get_async_session)):
     """
     Returns the currently active form schema from the database.
-    (Currently returns a static file as a placeholder).
+    This is used by the frontend to render the application form.
     """
-    if not STATIC_SCHEMA_PATH.is_file():
-        raise HTTPException(status_code=500, detail='Form schema file not found.')
+    query = select(FormSchema).where(FormSchema.is_active.is_(True))
+    result = await session.execute(query)
+    active_schema = result.scalar_one_or_none()
 
-    with open(STATIC_SCHEMA_PATH, encoding='utf-8') as f:
-        return json.load(f)
+    if not active_schema:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail='No active form schema found in the database.',
+        )
+
+    return active_schema.schema_data
 
 
-# TODO: Implement Admin endpoints for schema management
-# GET /admin/forms/schemas
-# PUT /admin/forms/schemas/{id}
-# POST /admin/forms/schemas/{id}/activate
+@admin_router.post(
+    '/admin/forms/schema',
+    status_code=status.HTTP_201_CREATED,
+    summary='(Admin) Upload a new form schema and set it as active',
+)
+async def upload_new_schema(
+    schema_upload: FormSchemaUpload,
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    (Admin) Uploads a new version of the form schema.
+
+    This endpoint performs two actions in a single transaction:
+    1. Sets `is_active = false` for all existing schemas.
+    2. Creates a new schema record with the provided data and sets `is_active = true`.
+    """
+    async with session.begin():
+        # Deactivate all other schemas
+        await session.execute(update(FormSchema).values(is_active=False))
+
+        # Create and activate the new schema
+        new_schema = FormSchema(
+            version=schema_upload.version,
+            schema_data=schema_upload.schema_data,
+            is_active=True,
+        )
+        session.add(new_schema)
+
+    return {'message': f'Schema version {schema_upload.version} has been uploaded and activated.'}
