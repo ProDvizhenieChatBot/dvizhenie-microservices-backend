@@ -1,7 +1,11 @@
 # services/api_service/src/app/main.py
 from fastapi import FastAPI
 
-from app.api import applications, auth, sessions
+from app.api import sessions
+from app.api.applications import (
+    admin_router as applications_admin_router,
+    router as applications_public_router,
+)
 from app.api.schemas import admin_router as schemas_admin_router, router as schemas_public_router
 from app.core.config import settings
 
@@ -9,13 +13,15 @@ from app.core.config import settings
 app = FastAPI(title=settings.APP_TITLE)
 
 # Register API routers
-app.include_router(applications.router, prefix='/api/v1/applications', tags=['Applications'])
+app.include_router(applications_public_router, prefix='/api/v1/applications', tags=['Applications'])
+app.include_router(
+    applications_admin_router, prefix='/api/v1/admin/applications', tags=['Admin: Applications']
+)
 app.include_router(schemas_public_router, prefix='/api/v1/forms', tags=['Forms'])
 app.include_router(
     schemas_admin_router, prefix='/api/v1', tags=['Admin: Forms']
 )  # Note: Nginx handles /admin path prefix
 app.include_router(sessions.router, prefix='/api/v1/sessions', tags=['Sessions'])
-app.include_router(auth.router, prefix='/api/v1/auth', tags=['Authentication'])
 
 
 @app.get('/api/v1/health')

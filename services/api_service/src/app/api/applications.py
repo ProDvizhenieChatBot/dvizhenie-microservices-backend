@@ -1,7 +1,7 @@
-# services/api_service/src/app/api/applications.py
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -16,14 +16,18 @@ from app.schemas.applications import (
     ApplicationUpdate,
     FileLinkRequest,
 )
+from app.services.export_service import generate_xlsx_export
 
 
+# Router for public-facing endpoints (used by Mini App)
 router = APIRouter()
+# Router for admin-only endpoints
+admin_router = APIRouter()
 
 # --- Admin Endpoints ---
 
 
-@router.get(
+@admin_router.get(
     '/',
     response_model=list[ApplicationAdmin],
     summary='(Admin) Get a list of all applications',
@@ -51,7 +55,32 @@ async def get_all_applications(
     return result.scalars().all()
 
 
-@router.get(
+@admin_router.get(
+    '/export',
+    response_class=StreamingResponse,
+    summary='(Admin) Export applications to an XLSX file',
+)
+async def export_applications_to_xlsx(session: AsyncSession = Depends(get_async_session)):
+    """
+    (Admin) Fetches all applications from the database, flattens the data,
+    and returns it as an XLSX file.
+    """
+    query = select(Application).options(selectinload(Application.files))
+    result = await session.execute(query)
+    applications = result.scalars().all()
+
+    xlsx_buffer = generate_xlsx_export(applications)
+
+    return StreamingResponse(
+        content=xlsx_buffer,
+        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={
+            'Content-Disposition': 'attachment; filename="applications_export.xlsx"',
+        },
+    )
+
+
+@admin_router.get(
     '/{application_uuid}',
     response_model=ApplicationAdmin,
     summary='(Admin) Get detailed information for a single application',
@@ -79,7 +108,7 @@ async def get_application_details_admin(
     return db_application
 
 
-@router.patch(
+@admin_router.patch(
     '/{application_uuid}',
     response_model=ApplicationAdmin,
     summary='(Admin) Update application status or add a comment',
@@ -120,8 +149,6 @@ async def update_application_admin(
     '/{application_uuid}/public',
     response_model=ApplicationPublic,
     summary='Get application data for filling',
-    # Note: A more specific path to avoid conflict with admin GET.
-    # Nginx routing will handle making this available at /applications/{uuid}
 )
 async def get_application_data_public(
     application_uuid: UUID,
