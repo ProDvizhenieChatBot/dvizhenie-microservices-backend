@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
+from app.core.config import settings
 from app.core.db import get_async_session
 from app.models.db_models import Application, ApplicationFile
 from app.schemas.applications import (
@@ -17,11 +18,10 @@ from app.schemas.applications import (
     FileLinkRequest,
 )
 from app.services.export_service import generate_xlsx_export
+from app.services.zip_service import create_documents_zip_archive
 
 
-# Router for public-facing endpoints (used by Mini App)
 router = APIRouter()
-# Router for admin-only endpoints
 admin_router = APIRouter()
 
 # --- Admin Endpoints ---
@@ -77,6 +77,48 @@ async def export_applications_to_xlsx(session: AsyncSession = Depends(get_async_
         headers={
             'Content-Disposition': 'attachment; filename="applications_export.xlsx"',
         },
+    )
+
+
+@admin_router.get(
+    '/{application_uuid}/download-documents',
+    response_class=StreamingResponse,
+    summary='(Admin) Download all documents for an application as a ZIP archive',
+)
+async def download_documents_as_zip(
+    application_uuid: UUID,
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    (Admin) Generates and streams a ZIP file containing all documents
+    attached to a specific application.
+    """
+    query = (
+        select(Application)
+        .where(Application.id == application_uuid)
+        .options(selectinload(Application.files))
+    )
+    result = await session.execute(query)
+    db_application = result.scalar_one_or_none()
+
+    if not db_application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'Application with id {application_uuid} not found',
+        )
+    if not db_application.files:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='No documents found for this application.',
+        )
+
+    zip_buffer = await create_documents_zip_archive(app=db_application, settings=settings)
+
+    zip_filename = f'application_docs_{application_uuid}.zip'
+    return StreamingResponse(
+        content=zip_buffer,
+        media_type='application/zip',
+        headers={'Content-Disposition': f'attachment; filename="{zip_filename}"'},
     )
 
 
