@@ -1,3 +1,4 @@
+# services/api_service/src/app/core/config.py
 from functools import cached_property
 
 from pydantic import computed_field
@@ -11,6 +12,10 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
+
+    FILE_STORAGE_SERVICE_URL: str
+    S3_PUBLIC_URL: str
+    S3_ENDPOINT_URL: str
 
     @computed_field
     @cached_property
