@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends
+# services/api_service/src/app/api/sessions.py
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
+from sqlalchemy import desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.core.db import get_async_session
 from app.models.db_models import Application
-from app.schemas.applications import ApplicationStatus
+from app.schemas.applications import ApplicationStatus, ApplicationStatusResponse
 
 
 router = APIRouter()
@@ -83,3 +85,29 @@ async def create_web_session(
     await session.refresh(new_application)
 
     return {'application_uuid': str(new_application.id)}
+
+
+@router.get('/telegram/status', response_model=ApplicationStatusResponse)
+async def get_telegram_application_status(
+    telegram_id: int = Query(..., description='The Telegram ID of the user.'),
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Gets the status of the most recent application for a given Telegram user.
+    """
+    query = (
+        select(Application.status)
+        .where(Application.telegram_id == telegram_id)
+        .order_by(desc(Application.created_at))
+        .limit(1)
+    )
+    result = await session.execute(query)
+    application_status = result.scalar_one_or_none()
+
+    if application_status is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'No application found for Telegram user {telegram_id}',
+        )
+
+    return {'status': application_status}
