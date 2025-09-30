@@ -1,38 +1,66 @@
 # services/api_service/src/app/api/sessions.py
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from app.core.db import get_async_session
 from app.models.db_models import Application
+from app.schemas.applications import ApplicationStatus
 
 
 router = APIRouter()
 
 
-@router.post('/telegram', status_code=status.HTTP_201_CREATED)
-async def create_telegram_session(session: AsyncSession = Depends(get_async_session)):
+# --- Pydantic Schemas for this endpoint ---
+class TelegramSessionRequest(BaseModel):
+    telegram_id: int
+
+
+class SessionResponse(BaseModel):
+    application_uuid: str
+
+
+# --- Endpoint Implementation ---
+@router.post('/telegram', response_model=SessionResponse)
+async def create_or_resume_telegram_session(
+    request: TelegramSessionRequest,
+    session: AsyncSession = Depends(get_async_session),
+):
     """
     This endpoint is called by the Bot Service when a user starts a conversation.
 
-    It performs two main actions:
-    1.  Creates a new application with a 'draft' status in the database.
-    2.  Returns a unique session token (currently the application ID) that the
-        Mini App will use to identify and save progress for this specific user session.
+    It performs the following logic:
+    1. Searches for an existing application in 'draft' status for the given telegram_id.
+    2. If found, it returns the UUID of that application.
+    3. If not found, it creates a new draft application, links it to the telegram_id,
+       and returns the new UUID.
     """
-    # 1. Create a new draft application instance
-    new_application = Application(
-        status='draft',
-        data={},  # Initialize with an empty JSON object for form data
-    )
+    telegram_id = request.telegram_id
 
-    # 2. Add to session, commit to DB, and refresh to get the new ID
+    # 1. Look for an existing draft application
+    query = select(Application).where(
+        Application.telegram_id == telegram_id,
+        Application.status == ApplicationStatus.DRAFT.value,
+    )
+    result = await session.execute(query)
+    existing_application = result.scalar_one_or_none()
+
+    if existing_application:
+        # 2. If found, return its UUID
+        return {'application_uuid': str(existing_application.id)}
+
+    # 3. If not found, create a new one
+    new_application = Application(
+        telegram_id=telegram_id,
+        status=ApplicationStatus.DRAFT.value,
+        data={},
+    )
     session.add(new_application)
     await session.commit()
     await session.refresh(new_application)
 
-    # 3. Return the ID as a session token.
-    # TODO: Replace with a secure JWT in the future.
-    return {'session_token': new_application.id}
+    return {'application_uuid': str(new_application.id)}
 
 
 @router.post('/web')

@@ -8,25 +8,26 @@ class ApiClient:
     def __init__(self, base_url: str):
         self.base_url = base_url
 
-    async def create_telegram_session(self) -> str | None:
+    async def create_telegram_session(self, telegram_id: int) -> str | None:
         """
-        Calls the API service to create a session for a Telegram user.
-        Returns the session_token if successful, otherwise None.
+        Calls the API service to create or resume a session for a Telegram user.
+        Sends the user's telegram_id in the request body.
+        Returns the application_uuid if successful, otherwise None.
         """
-        # TODO: Implement robust error handling (try-except blocks, logging)
         async with httpx.AsyncClient() as client:
             try:
-                response = await client.post(f'{self.base_url}/api/v1/sessions/telegram')
+                payload = {'telegram_id': telegram_id}
+                response = await client.post(
+                    f'{self.base_url}/api/v1/sessions/telegram', json=payload
+                )
                 response.raise_for_status()
                 data = response.json()
-                # The API now returns 'session_token' which corresponds to the application ID.
-                token = data.get('session_token')
-                return str(token) if token is not None else None
+                return data.get('application_uuid')
             except httpx.HTTPStatusError as e:
-                print(f'HTTP error occurred: {e}')
+                print(f'HTTP error occurred while creating session for {telegram_id}: {e}')
                 return None
             except Exception as e:
-                print(f'An unexpected error occurred: {e}')
+                print(f'An unexpected error occurred while creating session for {telegram_id}: {e}')
                 return None
 
 

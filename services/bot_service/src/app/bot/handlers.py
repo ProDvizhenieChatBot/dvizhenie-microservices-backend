@@ -1,3 +1,4 @@
+# services/bot_service/src/app/bot/handlers.py
 from aiogram import Router, types
 from aiogram.filters import CommandStart
 from aiogram.types import WebAppInfo
@@ -13,15 +14,20 @@ router = Router()
 async def start_handler(message: types.Message):
     """
     Handles the /start command.
-    1. Calls the API service to create a session and get a resume_token.
-    2. Sends a message with a button to open the Mini App.
+    1. Gets the user's telegram_id.
+    2. Calls the API service to create or resume a session and get an application_uuid.
+    3. Sends a message with a button to open the Mini App, using the UUID as a token.
     """
-    # TODO: Handle potential errors from the API call
-    token = await api_client.create_telegram_session()
+    if not message.from_user:
+        await message.answer('Не удалось определить пользователя. Пожалуйста, попробуйте еще раз.')
+        return
 
-    if token:
-        # Append the token to the Mini App URL
-        mini_app_url = f'{settings.MINI_APP_URL}?token={token}'
+    user_id = message.from_user.id
+    application_uuid = await api_client.create_telegram_session(telegram_id=user_id)
+
+    if application_uuid:
+        # The token is now the UUID of the application
+        mini_app_url = f'{settings.MINI_APP_URL}?token={application_uuid}'
 
         keyboard = types.InlineKeyboardMarkup(
             inline_keyboard=[

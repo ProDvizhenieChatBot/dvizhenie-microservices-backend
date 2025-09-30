@@ -1,3 +1,4 @@
+# services/api_service/src/app/alembic/env.py
 import os
 import sys
 from logging.config import fileConfig
@@ -13,8 +14,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 from app.core.config import settings
 from app.core.db import Base
 
-
-# TODO: Import all models here so that Alembic can see them
+# Import all models here so that Alembic can see them
+from app.models import db_models  # noqa: F401
 
 
 config = context.config
@@ -26,6 +27,7 @@ config.set_main_option('sqlalchemy.url', sync_db_url)
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+# This is the target metadata
 target_metadata = Base.metadata
 
 

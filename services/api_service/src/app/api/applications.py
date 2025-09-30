@@ -1,123 +1,232 @@
 # services/api_service/src/app/api/applications.py
-# services/api_service/src/app/api/applications.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 
 from app.core.db import get_async_session
-from app.models.db_models import Application
+from app.models.db_models import Application, ApplicationFile
 from app.schemas.applications import (
-    ApplicationCreate,
-    ApplicationResponse,
+    ApplicationAdmin,
+    ApplicationAdminUpdate,
+    ApplicationPublic,
+    ApplicationStatus,
     ApplicationUpdate,
+    FileLinkRequest,
 )
 
 
 router = APIRouter()
 
-# TODO: Implement Admin endpoints for application management
-# GET /admin/applications
-# GET /admin/applications/{id}
-# PATCH /admin/applications/{id}
-
-# TODO: Implement Public endpoints for application drafts and submission
-# GET /applications/{token}
-# PATCH /applications/{token}
-# POST /applications/{token}
-
-
-@router.get('/')
-async def get_applications_placeholder():
-    # This is a placeholder for admin functionality
-    return {'message': 'TODO: Implement GET /admin/applications endpoint'}
-
-
-@router.post(
-    '/',
-    response_model=ApplicationResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary='Create a new draft application',
-)
-async def create_draft_application(
-    # The request body is validated against ApplicationCreate, which is currently empty.
-    application_in: ApplicationCreate,
-    session: AsyncSession = Depends(get_async_session),
-):
-    """
-    Creates a new application with a 'draft' status.
-
-    This endpoint initializes a new application process by creating a record
-    in the database. It returns the new application's ID and status.
-    """
-    # Create a new SQLAlchemy model instance
-    new_application = Application(
-        status='draft',
-        data={},  # Explicitly set data to an empty JSON object
-    )
-
-    # Add it to the session and commit to the database
-    session.add(new_application)
-    await session.commit()
-    await session.refresh(new_application)  # Refresh to get the DB-assigned ID
-
-    return new_application
+# --- Admin Endpoints ---
 
 
 @router.get(
-    '/{application_id}',
-    response_model=ApplicationResponse,
-    summary='Get application data',
+    '/',
+    response_model=list[ApplicationAdmin],
+    summary='(Admin) Get a list of all applications',
 )
-async def get_application_data(
-    application_id: int,
+async def get_all_applications(
+    status: ApplicationStatus | None = Query(None, description='Filter by application status'),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
     session: AsyncSession = Depends(get_async_session),
 ):
     """
-    Retrieves all data for a specific application by its ID.
+    (Admin) Retrieves a list of applications, with optional filtering and pagination.
     """
-    query = select(Application).where(Application.id == application_id)
+    query = (
+        select(Application)
+        .options(selectinload(Application.files))
+        .order_by(Application.created_at)
+    )
+
+    if status:
+        query = query.where(Application.status == status.value)
+
+    query = query.limit(limit).offset(offset)
+    result = await session.execute(query)
+    return result.scalars().all()
+
+
+@router.get(
+    '/{application_uuid}',
+    response_model=ApplicationAdmin,
+    summary='(Admin) Get detailed information for a single application',
+)
+async def get_application_details_admin(
+    application_uuid: UUID,
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    (Admin) Retrieves full details for a specific application, including linked files.
+    """
+    query = (
+        select(Application)
+        .where(Application.id == application_uuid)
+        .options(selectinload(Application.files))
+    )
     result = await session.execute(query)
     db_application = result.scalar_one_or_none()
 
     if db_application is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'Application with id {application_id} not found',
+            detail=f'Application with id {application_uuid} not found',
         )
-
     return db_application
 
 
 @router.patch(
-    '/{application_id}',
-    response_model=ApplicationResponse,
-    summary='Save application progress',
+    '/{application_uuid}',
+    response_model=ApplicationAdmin,
+    summary='(Admin) Update application status or add a comment',
 )
-async def save_application_progress(
-    application_id: int,
-    application_in: ApplicationUpdate,
+async def update_application_admin(
+    application_uuid: UUID,
+    update_data: ApplicationAdminUpdate,
     session: AsyncSession = Depends(get_async_session),
 ):
     """
-    Updates the data JSON field of a specific application.
-
-    This endpoint is used by the front-end to periodically save the user's
-    progress as they fill out the application form.
+    (Admin) Updates an application's status or internal admin comment.
     """
-    query = select(Application).where(Application.id == application_id)
+    query = select(Application).where(Application.id == application_uuid)
     result = await session.execute(query)
     db_application = result.scalar_one_or_none()
 
     if db_application is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'Application with id {application_id} not found',
+            detail=f'Application with id {application_uuid} not found',
         )
 
-    # Update the application's data with the payload
+    if update_data.status is not None:
+        db_application.status = update_data.status.value
+    if update_data.admin_comment is not None:
+        db_application.admin_comment = update_data.admin_comment
+
+    session.add(db_application)
+    await session.commit()
+    await session.refresh(db_application)
+    return db_application
+
+
+# --- Public Endpoints for Mini App ---
+
+
+@router.get(
+    '/{application_uuid}/public',
+    response_model=ApplicationPublic,
+    summary='Get application data for filling',
+    # Note: A more specific path to avoid conflict with admin GET.
+    # Nginx routing will handle making this available at /applications/{uuid}
+)
+async def get_application_data_public(
+    application_uuid: UUID,
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Retrieves the current data for an application, used by the Mini App to resume.
+    """
+    db_application = await session.get(Application, application_uuid)
+    if db_application is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'Application with id {application_uuid} not found',
+        )
+    return db_application
+
+
+@router.patch(
+    '/{application_uuid}/public',
+    response_model=ApplicationPublic,
+    summary='Save application progress',
+)
+async def save_application_progress(
+    application_uuid: UUID,
+    application_in: ApplicationUpdate,
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Saves the user's progress from the Mini App.
+    """
+    db_application = await session.get(Application, application_uuid)
+    if db_application is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'Application with id {application_uuid} not found',
+        )
+
+    if db_application.status != ApplicationStatus.DRAFT.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Can only update applications in draft status.',
+        )
+
     db_application.data = application_in.data
     session.add(db_application)
     await session.commit()
     await session.refresh(db_application)
-
     return db_application
+
+
+@router.post(
+    '/{application_uuid}/files',
+    status_code=status.HTTP_201_CREATED,
+    summary='Link an uploaded file to the application',
+)
+async def link_file_to_application(
+    application_uuid: UUID,
+    file_link: FileLinkRequest,
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    After a file is uploaded to the file-storage-service, the Mini App calls
+    this endpoint to create a record linking the file_id to the application.
+    """
+    db_application = await session.get(Application, application_uuid)
+    if not db_application:
+        raise HTTPException(status_code=404, detail='Application not found')
+
+    new_file_link = ApplicationFile(
+        application_id=application_uuid,
+        file_id=file_link.file_id,
+        original_filename=file_link.original_filename,
+        form_field_id=file_link.form_field_id,
+    )
+    session.add(new_file_link)
+    await session.commit()
+    return {'message': 'File linked successfully'}
+
+
+@router.post(
+    '/{application_uuid}/submit',
+    status_code=status.HTTP_200_OK,
+    summary='Submit the application for review',
+)
+async def submit_application(
+    application_uuid: UUID,
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Finalizes the application, changing its status from 'draft' to 'new'.
+    """
+    db_application = await session.get(Application, application_uuid)
+    if db_application is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'Application with id {application_uuid} not found',
+        )
+
+    if db_application.status != ApplicationStatus.DRAFT.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Application has already been submitted.',
+        )
+
+    db_application.status = ApplicationStatus.NEW.value
+    session.add(db_application)
+    await session.commit()
+    return {'message': 'Application submitted successfully'}

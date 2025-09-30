@@ -1,9 +1,19 @@
 # services/api_service/src/app/models/db_models.py
+import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.core.db import Base
@@ -12,19 +22,42 @@ from app.core.db import Base
 class Application(Base):
     __tablename__ = 'applications'
 
-    # The `Mapped` type tells the type checker what the Python type is.
-    # The `mapped_column` function tells SQLAlchemy how to map it to the database.
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    status: Mapped[str] = mapped_column(String, default='new', nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    telegram_id: Mapped[int | None] = mapped_column(
+        BigInteger, unique=True, nullable=True, index=True
+    )
+    status: Mapped[str] = mapped_column(String, default='draft', nullable=False)
     data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    admin_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    files: Mapped[list['ApplicationFile']] = relationship(
+        back_populates='application', cascade='all, delete-orphan'
+    )
+
+
+class ApplicationFile(Base):
+    __tablename__ = 'application_files'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    application_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey('applications.id'), nullable=False
+    )
+    file_id: Mapped[str] = mapped_column(String, nullable=False)
+    original_filename: Mapped[str] = mapped_column(String, nullable=False)
+    form_field_id: Mapped[str] = mapped_column(
+        String, nullable=False, comment='ID of the field in the form schema this file belongs to'
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
+    application: Mapped['Application'] = relationship(back_populates='files')
 
-# TODO: Define other necessary SQLAlchemy models here
-# - User (for Mini App/Web Widget users)
-# - AdminUser (for admin panel users)
-# - Comment
-# - FormSchema (to store schemas in the DB)
-# - ApplicationFileLink (to link applications to file_ids from the file service)
+
+# TODO: Define FormSchema (to store schemas in the DB)
