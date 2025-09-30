@@ -1,51 +1,53 @@
 # Project Roadmap
 
-This document provides a high-level overview of the development phases for the charity fund's backend system. The initial project setup and microservice architecture are complete.
+This document provides a high-level overview of the development phases for the charity fund's backend system. It outlines the major strategic goals for each phase.
 
-For detailed, actionable tasks, please refer to the team's Kanban board. The technical contract for the API is defined in the `openapi.yaml` specification.
-
----
-
-### **Phase 1: Core Backend Implementation**
-
-The goal of this phase is to build the foundational logic for handling applications, files, and administrative access.
-
-*   **Implement Application Lifecycle:**
-    *   Develop the primary API endpoints for creating application drafts, saving progress (`PATCH /applications/me`), and retrieving application data for the Mini App.
-
-*   **Implement Admin Authentication via Yandex OAuth 2.0:**
-    *   Integrate a secure and standard authentication process for foundation staff using their Yandex accounts. This includes handling the OAuth flow and issuing internal JWTs for session management.
-
-*   **Build out the File Storage Service:**
-    *   Implement the file upload logic with S3 (MinIO) integration.
-    *   Develop the functionality to generate secure, temporary (pre-signed) URLs for downloading documents.
-    *   Establish a link between uploaded files and the applications they belong to.
+For detailed, actionable tasks, please refer to the team's `kanban.md`. The technical contract for the API is defined in the `openapi.yaml` specification.
 
 ---
 
-### **Phase 2: Admin Panel and Schema Management**
+### **Phase 1: Foundational Setup [Completed]**
 
-This phase focuses on providing tools for foundation staff to manage the system effectively.
+The goal of this phase was to establish the project's infrastructure and build the initial, isolated versions of each service. This phase is complete.
+
+*   **Microservice Architecture:** The project was structured with three core services (`api-service`, `bot-service`, `file-storage-service`) and an Nginx `gateway`. All services are containerized with Docker.
+*   **File Storage Service:** A fully functional service for uploading files to MinIO (S3) and generating secure download links was implemented.
+*   **Initial API Endpoints:** Basic, proof-of-concept endpoints for creating and updating applications were developed.
+
+---
+
+### **Phase 2: Core Logic Refactoring and Admin Features [In Progress]**
+
+This is the current and most critical phase. The goal is to refactor the data model to support the full requirements of the application lifecycle and to build the necessary API endpoints for both users and administrators.
+
+*   **Implement Admin Authentication (MVP):**
+    *   Secure all administrative endpoints using **Nginx Basic Auth**. This provides a simple and effective security layer for the MVP, with credentials managed via environment variables.
+
+*   **Refactor the Core Data Model:**
+    *   The `Application` model is being rebuilt to use **UUIDs as primary keys** for secure, public-facing links.
+    *   Support for **resumable sessions** will be added by linking applications to a user's `telegram_id`.
+    *   A dedicated `ApplicationFile` table will be created to properly link uploaded files to their corresponding applications and form fields.
 
 *   **Develop Admin API Endpoints:**
-    *   Create secure endpoints for listing, viewing, and changing the status of applications.
-    *   Implement filtering and pagination for managing a large number of applications.
+    *   Create secure endpoints for foundation staff to list, view, and change the status of applications. These endpoints will operate on the new UUID-based data model.
+
+*   **Develop Public API for Mini App:**
+    *   Implement the public-facing endpoints that the Mini App will use. This includes saving form progress, linking uploaded files, and submitting the final application, all identified by the application's **UUID in the URL** (e.g., `PATCH /applications/{application_uuid}`).
 
 *   **Make Form Schema Database-Backed:**
-    *   Transition the application form structure from a static file to a model in the database.
-    *   Create secure administrative endpoints for viewing and eventually managing different versions of the application form.
+    *   Transition the application form structure from a static JSON file to a model in the database to allow for future management without code changes.
 
 ---
 
-### **Phase 3: Client Integration and Finalization**
+### **Phase 3: Client Integration and Finalization [Next Up]**
 
-This phase ensures that the client-facing services (like the Telegram Bot) are fully integrated and the system is ready for use.
+This phase will focus on connecting the client-facing services to the stable backend and preparing for launch.
 
 *   **Finalize Bot Service Integration:**
-    *   Connect the `bot-service` to the production-ready session creation and notification endpoints of the `api-service`.
-
-*   **Implement Web Widget Support (Future):**
-    *   Develop the "Magic Link" session logic for users initiating the process from the foundation's website.
+    *   Connect the `bot-service` to the refactored `api-service`. The bot will use the new `telegram_id`-based logic to create or resume user sessions, providing a seamless experience for returning users.
 
 *   **End-to-End Testing:**
-    *   Conduct comprehensive testing of the full user journey: from a user starting a dialogue in Telegram to an admin processing the application in the admin panel.
+    *   Conduct comprehensive testing of the full user journey: from a user starting a dialogue in Telegram to an admin processing the completed application.
+
+*   **Implement Web Widget Support (Future):**
+    *   Develop the session logic for users initiating the process from the foundation's website, likely using a "Magic Link" approach.

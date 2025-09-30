@@ -145,7 +145,7 @@ paths:
   /applications:
     get:
       tags:
-        - Admin: Applications
+        - Admin Applications
       summary: (Админ) Получить список всех заявок
       security:
         - AdminBasicAuth: []
@@ -177,7 +177,7 @@ paths:
   /admin/applications/{application_uuid}: # Note: Path is logically distinct for clarity, handled by Nginx
     get:
       tags:
-        - Admin: Applications
+        - Admin Applications
       summary: (Админ) Получить детальную информацию по заявке
       security:
         - AdminBasicAuth: []
@@ -197,7 +197,7 @@ paths:
                 $ref: "#/components/schemas/ApplicationAdmin"
     patch:
       tags:
-        - Admin: Applications
+        - Admin Applications
       summary: (Админ) Обновить статус или комментарий заявки
       security:
         - AdminBasicAuth: []
