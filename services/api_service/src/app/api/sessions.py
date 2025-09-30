@@ -1,4 +1,3 @@
-# services/api_service/src/app/api/sessions.py
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -63,10 +62,24 @@ async def create_or_resume_telegram_session(
     return {'application_uuid': str(new_application.id)}
 
 
-@router.post('/web')
-async def create_web_session():
+@router.post('/web', response_model=SessionResponse)
+async def create_web_session(
+    session: AsyncSession = Depends(get_async_session),
+):
     """
-    TODO: Implement "Magic Link" logic for web widget users.
-    It should accept an email, generate a resume_token, and send the link.
+    Creates a new session for a user starting from the web widget.
+
+    This endpoint creates a new draft application without a telegram_id
+    and returns its unique UUID. The frontend is responsible for storing
+    this UUID (e.g., in a cookie) to manage the session.
     """
-    return {'message': 'TODO: Implement web session creation'}
+    new_application = Application(
+        telegram_id=None,  # Explicitly set to None for web sessions
+        status=ApplicationStatus.DRAFT.value,
+        data={},
+    )
+    session.add(new_application)
+    await session.commit()
+    await session.refresh(new_application)
+
+    return {'application_uuid': str(new_application.id)}
