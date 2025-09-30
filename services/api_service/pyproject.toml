@@ -1,0 +1,115 @@
+# services/api_service/pyproject.toml
+[project]
+name = "api-service"
+version = "0.1.0"
+description = "Core API Service for Charity MVP"
+authors = [{ name = "Hackathon Team 11" }]
+requires-python = "==3.12.*"
+dependencies = [
+    "asyncpg==0.29.0",
+    "alembic==1.13.1",
+    "fastapi==0.111.0",
+    "psycopg2-binary==2.9.9",
+    "pydantic-settings==2.2.1",
+    "sqlalchemy==2.0.29",
+    "uvicorn[standard]==0.29.0",
+    "httpx==0.27.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff==0.13.1",
+    "pyright==1.1.405",
+    "pytest==8.2.2",
+    "pytest-asyncio==0.23.7",
+    "httpx==0.27.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "C",    # flake8-comprehensions
+    "B",    # flake8-bugbear
+    "UP",   # pyupgrade
+    "N",    # pep8-naming
+    "RUF",  # ruff-specific rules
+    "PT",   # pytest
+    "SIM",  # flake8-simplify
+    "TID",  # flake8-tidy-imports
+]
+ignore = [
+    "RUF001",  # String contains ambiguous unicode character
+    "B008",
+]
+fixable = ["ALL"]
+unfixable = []
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+combine-as-imports = true
+lines-after-imports = 2
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+inline-quotes = "single"
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.pyright]
+reportCallIssue = false
+reportArgumentType = "none"
+reportGeneralTypeIssues = "none"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore:Please use `import python_multipart` instead.:PendingDeprecationWarning"
+]
+
+[dependency-groups]
+dev = [
+    # "aiosqlite>=0.20.0",
+    "pytest-asyncio>=0.23.7",
+]
