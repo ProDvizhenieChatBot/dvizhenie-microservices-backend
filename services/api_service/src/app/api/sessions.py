@@ -1,7 +1,6 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
 from sqlalchemy import desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -9,18 +8,11 @@ from sqlalchemy.future import select
 from app.core.db import get_async_session
 from app.models.db_models import Application
 from app.schemas.applications import ApplicationStatus, ApplicationStatusResponse
+from app.schemas.sessions import SessionResponse, TelegramSessionRequest
 
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-
-class TelegramSessionRequest(BaseModel):
-    telegram_id: int
-
-
-class SessionResponse(BaseModel):
-    application_uuid: str
 
 
 @router.post('/telegram', response_model=SessionResponse)
