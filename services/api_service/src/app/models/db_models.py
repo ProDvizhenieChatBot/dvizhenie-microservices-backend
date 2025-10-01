@@ -24,7 +24,10 @@ class Application(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     telegram_id: Mapped[int | None] = mapped_column(
-        BigInteger, unique=True, nullable=True, index=True
+        BigInteger,
+        unique=False,
+        nullable=True,
+        index=True,
     )
     status: Mapped[str] = mapped_column(String, default='draft', nullable=False)
     data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
