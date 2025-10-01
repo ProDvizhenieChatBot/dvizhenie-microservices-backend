@@ -18,7 +18,7 @@ STATUS_MESSAGES = {
     'in_progress': 'Ваша заявка находится в обработке у специалиста фонда.',
     'completed': 'Ваша заявка успешно обработана и закрыта.',
     'rejected': 'К сожалению, по вашей заявке было принято отрицательное решение. Свяжитесь с нами для уточения деталей.',  # noqa: E501
-    'not_found': 'Мы не нашли ваших заявок. Нажмите /start, чтобы начать заполнение анкеты.',
+    'not_found': 'Мы не нашли ваших заявок. Нажмите /form, чтобы начать заполнение анкеты.',
 }
 DEFAULT_ERROR_MESSAGE = 'Не удалось получить статус вашей заявки. Пожалуйста, попробуйте позже.'
 
@@ -26,7 +26,21 @@ DEFAULT_ERROR_MESSAGE = 'Не удалось получить статус ва�
 @router.message(CommandStart())
 async def start_handler(message: types.Message):
     """
-    Handles the /start command.
+    Handles the /start command by providing information about the bot.
+    """
+    await message.answer(
+        "Здравствуйте! Это бот благотворительного фонда 'Про Движение'.\n\n"
+        'Я помогу вам подать заявку на получение помощи.\n\n'
+        'Используйте эти команды для навигации:\n'
+        '🔹 `/form` — начать заполнение или вернуться к черновику анкеты.\n'
+        '🔹 `/status` — узнать текущий статус вашей последней заявки.'
+    )
+
+
+@router.message(Command('form'))
+async def form_handler(message: types.Message):
+    """
+    Handles the /form command.
     1. Gets the user's telegram_id.
     2. Calls the API service to create or resume a session and get an application_uuid.
     3. Sends a message with a button to open the Mini App, using the UUID as a token.
@@ -36,7 +50,7 @@ async def start_handler(message: types.Message):
         return
 
     user_id = message.from_user.id
-    logger.info(f'User {user_id} triggered /start command.')
+    logger.info(f'User {user_id} triggered /form command.')
     application_uuid = await api_client.create_telegram_session(telegram_id=user_id)
 
     if application_uuid:
@@ -54,7 +68,6 @@ async def start_handler(message: types.Message):
             ]
         )
         await message.answer(
-            "Здравствуйте! Это бот фонда 'Движение Жизни'.\n\n"
             'Чтобы подать заявку, нажмите на кнопку ниже, чтобы открыть анкету.',
             reply_markup=keyboard,
         )
