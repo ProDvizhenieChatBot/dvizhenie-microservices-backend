@@ -12,7 +12,6 @@ router = Router()
 logger = logging.getLogger(__name__)
 
 
-# A mapping from status keys to human-readable text
 STATUS_MESSAGES = {
     'draft': 'Ваша анкета находится в процессе заполнения. Вы можете вернуться к ней в любой момент.',  # noqa: E501
     'new': 'Ваша заявка принята и ожидает рассмотрения. Мы свяжемся с вами в ближайшее время.',
@@ -42,7 +41,6 @@ async def start_handler(message: types.Message):
 
     if application_uuid:
         logger.info(f'Session created/resumed for user {user_id} with UUID: {application_uuid}')
-        # The token is now the UUID of the application
         mini_app_url = f'{settings.MINI_APP_URL}?token={application_uuid}'
 
         keyboard = types.InlineKeyboardMarkup(

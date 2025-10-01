@@ -1,4 +1,3 @@
-# services/api_service/src/app/alembic/env.py
 import os
 import sys
 from logging.config import fileConfig
@@ -8,26 +7,21 @@ from sqlalchemy import engine_from_config
 from sqlalchemy.pool import NullPool
 
 
-# Add the 'src' directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from app.core.config import settings
 from app.core.db import Base
-
-# Import all models here so that Alembic can see them
 from app.models import db_models  # noqa: F401
 
 
 config = context.config
 
-# Use the synchronous URL for Alembic migrations
 sync_db_url = settings.database_url.replace('+asyncpg', '')
 config.set_main_option('sqlalchemy.url', sync_db_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# This is the target metadata
 target_metadata = Base.metadata
 
 

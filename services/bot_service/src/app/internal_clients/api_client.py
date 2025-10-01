@@ -70,5 +70,4 @@ class ApiClient:
                 return None
 
 
-# Singleton instance of the API client
 api_client = ApiClient(base_url=settings.API_SERVICE_URL)
