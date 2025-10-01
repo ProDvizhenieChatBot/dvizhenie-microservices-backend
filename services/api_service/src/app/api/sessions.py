@@ -1,4 +1,3 @@
-# services/api_service/src/app/api/sessions.py
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -16,7 +15,6 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-# --- Pydantic Schemas for this endpoint ---
 class TelegramSessionRequest(BaseModel):
     telegram_id: int
 
@@ -25,7 +23,6 @@ class SessionResponse(BaseModel):
     application_uuid: str
 
 
-# --- Endpoint Implementation ---
 @router.post('/telegram', response_model=SessionResponse)
 async def create_or_resume_telegram_session(
     request: TelegramSessionRequest,
@@ -42,7 +39,6 @@ async def create_or_resume_telegram_session(
     """
     telegram_id = request.telegram_id
 
-    # 1. Look for an existing draft application
     query = select(Application).where(
         Application.telegram_id == telegram_id,
         Application.status == ApplicationStatus.DRAFT.value,
@@ -51,14 +47,12 @@ async def create_or_resume_telegram_session(
     existing_application = result.scalar_one_or_none()
 
     if existing_application:
-        # 2. If found, return its UUID
         logger.info(
             f'Resuming session for telegram_id={telegram_id} '
             f'with application_uuid={existing_application.id}'
         )
         return {'application_uuid': str(existing_application.id)}
 
-    # 3. If not found, create a new one
     new_application = Application(
         telegram_id=telegram_id,
         status=ApplicationStatus.DRAFT.value,
@@ -87,7 +81,7 @@ async def create_web_session(
     this UUID (e.g., in a cookie) to manage the session.
     """
     new_application = Application(
-        telegram_id=None,  # Explicitly set to None for web sessions
+        telegram_id=None,
         status=ApplicationStatus.DRAFT.value,
         data={},
     )

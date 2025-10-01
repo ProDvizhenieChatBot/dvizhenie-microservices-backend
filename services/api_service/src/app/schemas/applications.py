@@ -5,7 +5,6 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 
-# Status Enum based on openapi.yaml
 class ApplicationStatus(str, Enum):
     DRAFT = 'draft'
     NEW = 'new'
@@ -14,7 +13,6 @@ class ApplicationStatus(str, Enum):
     REJECTED = 'rejected'
 
 
-# --- Schemas for File Linking ---
 class FileLinkRequest(BaseModel):
     """Schema to link an uploaded file to an application."""
 
@@ -33,7 +31,6 @@ class ApplicationFileResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# --- Schemas for Application Lifecycle ---
 class ApplicationCreate(BaseModel):
     """
     Input schema for creating an application.
@@ -56,7 +53,6 @@ class ApplicationAdminUpdate(BaseModel):
     admin_comment: str | None = Field(None, description='Internal comment from a staff member.')
 
 
-# --- Response Schemas ---
 class ApplicationPublic(BaseModel):
     """Represents the application data visible to the user (Mini App)."""
 

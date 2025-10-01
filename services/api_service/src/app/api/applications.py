@@ -1,4 +1,3 @@
-# services/api_service/src/app/api/applications.py
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -25,8 +24,6 @@ from app.services.zip_service import create_documents_zip_archive
 
 router = APIRouter()
 admin_router = APIRouter()
-
-# --- Admin Endpoints ---
 
 
 @admin_router.get(
@@ -186,9 +183,6 @@ async def update_application_admin(
     await session.refresh(db_application, attribute_names=['files'])
 
     return db_application
-
-
-# --- Public Endpoints for Mini App ---
 
 
 @router.get(

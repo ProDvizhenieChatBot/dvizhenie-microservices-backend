@@ -1,4 +1,3 @@
-# services/api_service/src/app/main.py
 import logging
 from contextlib import asynccontextmanager
 
@@ -14,7 +13,6 @@ from app.core.config import settings
 from app.core.initial_data import seed_initial_form_schema
 
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
@@ -35,15 +33,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title=settings.APP_TITLE, lifespan=lifespan)
 
-# Register API routers
 app.include_router(applications_public_router, prefix='/api/v1/applications', tags=['Applications'])
 app.include_router(
     applications_admin_router, prefix='/api/v1/admin/applications', tags=['Admin: Applications']
 )
 app.include_router(schemas_public_router, prefix='/api/v1/forms', tags=['Forms'])
-app.include_router(
-    schemas_admin_router, prefix='/api/v1', tags=['Admin: Forms']
-)  # Note: Nginx handles /admin path prefix
+app.include_router(schemas_admin_router, prefix='/api/v1', tags=['Admin: Forms'])
 app.include_router(sessions.router, prefix='/api/v1/sessions', tags=['Sessions'])
 
 

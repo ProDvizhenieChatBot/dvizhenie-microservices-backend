@@ -1,4 +1,3 @@
-# services/bot_service/pyproject.toml
 [project]
 name = "bot-service"
 version = "0.1.0"
@@ -46,21 +45,21 @@ exclude = [
 
 [tool.ruff.lint]
 select = [
-    "E",    # pycodestyle errors
-    "W",    # pycodestyle warnings
-    "F",    # pyflakes
-    "I",    # isort
-    "C",    # flake8-comprehensions
-    "B",    # flake8-bugbear
-    "UP",   # pyupgrade
-    "N",    # pep8-naming
-    "RUF",  # ruff-specific rules
-    "PT",   # pytest
-    "SIM",  # flake8-simplify
-    "TID",  # flake8-tidy-imports
+    "E",
+    "W",
+    "F",
+    "I",
+    "C",
+    "B",
+    "UP",
+    "N",
+    "RUF",
+    "PT",
+    "SIM",
+    "TID",
 ]
 ignore = [
-    "RUF001",  # String contains ambiguous unicode character
+    "RUF001",
 ]
 fixable = ["ALL"]
 unfixable = []

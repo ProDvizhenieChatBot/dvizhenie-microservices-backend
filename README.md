@@ -77,11 +77,11 @@
 
 ### Документация API (Swagger/ReDoc)
 
-*   **Динамическая документация `api-service` (через шлюз):**
+*   **Динамическая документация `api-service`:**
     *   Swagger UI: `http://localhost:8000/docs`
     *   ReDoc: `http://localhost:8000/redoc`
 
-*   **Динамическая документация `file-storage-service` (прямой доступ):**
+*   **Динамическая документация `file-storage-service`:**
     *   Swagger UI: `http://localhost:8002/docs`
     *   ReDoc: `http://localhost:8002/redoc`
     *   *Примечание: Этот порт открыт для удобства разработки.*
@@ -89,42 +89,6 @@
 ### Руководство по редактированию анкеты
 
 Для администраторов и менеджеров фонда доступно руководство, объясняющее, как устроена и как редактировать JSON-схему анкеты. Это позволяет изменять вопросы, варианты ответов и логику анкеты без необходимости привлекать разработчиков.
-
-*   **Руководство по JSON-схеме:** [`http://localhost:8000/form-manual`](http://localhost:8000/form-manual)
-
-## Процесс загрузки файлов
-
-Загрузка файла и его привязка к заявке происходит в два этапа, так как за эти операции отвечают разные микросервисы.
-
-**Шаг 1: Загрузка файла в `file-storage-service`**
-
-Клиент (Mini App) отправляет файл напрямую в сервис хранения файлов.
-
-*   **Запрос:** `POST http://localhost:8000/api/v1/files/upload`
-*   **Тело:** `multipart/form-data` с полем `file`.
-*   **Ответ (`201 Created`):** Сервис сохраняет файл в MinIO и возвращает его уникальный ID.
-    ```json
-    {
-      "file_id": "a1b2c3d4-e5f6-7890-a1b2-c3d4e5f67890.pdf",
-      "filename": "passport_scan.pdf",
-      "content_type": "application/pdf"
-    }
-    ```
-
-**Шаг 2: Привязка файла к заявке в `api-service`**
-
-Получив `file_id`, клиент отправляет его в основной API-сервис, чтобы создать связь между файлом и конкретной заявкой.
-
-*   **Запрос:** `POST http://localhost:8000/api/v1/applications/{application_uuid}/files`
-*   **Тело (`application/json`):**
-    ```json
-    {
-      "file_id": "a1b2c3d4-e5f6-7890-a1b2-c3d4e5f67890.pdf",
-      "original_filename": "passport_scan.pdf",
-      "form_field_id": "beneficiary_passport_scan"
-    }
-    ```
-*   **Ответ (`201 Created`):** Сервис создает запись в базе данных, связывая `application_uuid` с `file_id`.
 
 ## Разработка
 
@@ -167,3 +131,37 @@
 *   `docker-compose.yml`: Файл для оркестрации и запуска всех сервисов проекта.
 *   `.env.example`: Шаблон с необходимыми переменными окружения.
 *   `.pre-commit-config.yaml`: Конфигурация для pre-commit хуков.
+
+## Процесс загрузки файлов(воркфлоу)
+
+Загрузка файла и его привязка к заявке происходит в два этапа, так как за эти операции отвечают разные микросервисы.
+
+**Шаг 1: Загрузка файла в `file-storage-service`**
+
+Клиент (Mini App) отправляет файл напрямую в сервис хранения файлов.
+
+*   **Запрос:** `POST http://localhost:8000/api/v1/files/upload`
+*   **Тело:** `multipart/form-data` с полем `file`.
+*   **Ответ (`201 Created`):** Сервис сохраняет файл в MinIO и возвращает его уникальный ID.
+    ```json
+    {
+      "file_id": "a1b2c3d4-e5f6-7890-a1b2-c3d4e5f67890.pdf",
+      "filename": "passport_scan.pdf",
+      "content_type": "application/pdf"
+    }
+    ```
+
+**Шаг 2: Привязка файла к заявке в `api-service`**
+
+Получив `file_id`, клиент отправляет его в основной API-сервис, чтобы создать связь между файлом и конкретной заявкой.
+
+*   **Запрос:** `POST http://localhost:8000/api/v1/applications/{application_uuid}/files`
+*   **Тело (`application/json`):**
+    ```json
+    {
+      "file_id": "a1b2c3d4-e5f6-7890-a1b2-c3d4e5f67890.pdf",
+      "original_filename": "passport_scan.pdf",
+      "form_field_id": "beneficiary_passport_scan"
+    }
+    ```
+*   **Ответ (`201 Created`):** Сервис создает запись в базе данных, связывая `application_uuid` с `file_id`.

@@ -1,4 +1,3 @@
-# services/file_storage_service/src/app/api/files.py
 import logging
 import uuid
 from pathlib import Path
@@ -15,7 +14,7 @@ from app.schemas.files import FileDownloadResponse, FileUploadResponse
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-URL_EXPIRATION_SECONDS = 3600  # 1 hour
+URL_EXPIRATION_SECONDS = 3600
 
 
 @router.post('/', response_model=FileUploadResponse, status_code=status.HTTP_201_CREATED)

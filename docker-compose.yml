@@ -23,7 +23,7 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
-    env_file: .env # Requires MINIO_ROOT_USER & MINIO_ROOT_PASSWORD
+    env_file: .env
     volumes:
       - minio_data:/data
     networks:
@@ -40,9 +40,6 @@ services:
     networks:
       - charity_network
     restart: unless-stopped
-    # The gateway will expose the port, not the service itself
-    # ports:
-    #  - "8001:8000"
 
   bot-service:
     build:
@@ -61,12 +58,12 @@ services:
     container_name: file_service
     depends_on:
       db: { condition: service_healthy }
-      minio: { condition: service_started } # 'service_started' is appropriate here
+      minio: { condition: service_started }
     env_file: .env
     networks:
       - charity_network
     restart: unless-stopped
-    # temporarily expose the port for testing
+    # temporarily expose the port for testing and dev swagger
     ports:
       - "8002:8000"
 
@@ -75,7 +72,7 @@ services:
       context: ./nginx
     container_name: gateway
     ports:
-      - "8000:80" # Map host 8000 to container 80 for simplicity
+      - "8000:80"
     env_file: .env
     networks:
       - charity_network

@@ -1,4 +1,3 @@
-# services/api_service/src/app/core/config.py
 from functools import cached_property
 
 from pydantic import computed_field

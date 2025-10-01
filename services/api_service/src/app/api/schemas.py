@@ -8,9 +8,7 @@ from app.core.db import get_async_session
 from app.models.db_models import FormSchema
 
 
-# Router for public-facing schema endpoints
 router = APIRouter()
-# Router for admin-only schema management endpoints
 admin_router = APIRouter()
 
 
@@ -55,10 +53,8 @@ async def upload_new_schema(
     2. Creates a new schema record with the provided data and sets `is_active = true`.
     """
     async with session.begin():
-        # Deactivate all other schemas
         await session.execute(update(FormSchema).values(is_active=False))
 
-        # Create and activate the new schema
         new_schema = FormSchema(
             version=schema_upload.version,
             schema_data=schema_upload.schema_data,
