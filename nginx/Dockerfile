@@ -9,8 +9,6 @@ RUN rm /etc/nginx/conf.d/default.conf
 # Copy our custom configuration and entrypoint script
 COPY nginx.conf /etc/nginx/conf.d/
 COPY entrypoint.sh /entrypoint.sh
-# Copy the consolidated OpenAPI spec to be served statically
-COPY openapi.yaml /usr/share/nginx/html/openapi.yaml
 # Copy the form schema manual
 COPY form_manual.html /usr/share/nginx/html/form_manual.html
 
