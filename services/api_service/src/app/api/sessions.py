@@ -1,13 +1,9 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import desc
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from fastapi import APIRouter, HTTPException, Query, status
 
-from app.core.db import get_async_session
-from app.models.db_models import Application
-from app.schemas.applications import ApplicationStatus, ApplicationStatusResponse
+from app.core.dependencies import AppRepo
+from app.schemas.applications import ApplicationStatusResponse
 from app.schemas.sessions import SessionResponse, TelegramSessionRequest
 
 
@@ -18,7 +14,7 @@ logger = logging.getLogger(__name__)
 @router.post('/telegram', response_model=SessionResponse)
 async def create_or_resume_telegram_session(
     request: TelegramSessionRequest,
-    session: AsyncSession = Depends(get_async_session),
+    repo: AppRepo,
 ):
     """
     This endpoint is called by the Bot Service when a user starts a conversation.
@@ -30,13 +26,7 @@ async def create_or_resume_telegram_session(
        and returns the new UUID.
     """
     telegram_id = request.telegram_id
-
-    query = select(Application).where(
-        Application.telegram_id == telegram_id,
-        Application.status == ApplicationStatus.DRAFT.value,
-    )
-    result = await session.execute(query)
-    existing_application = result.scalar_one_or_none()
+    existing_application = await repo.get_draft_by_telegram_id(telegram_id)
 
     if existing_application:
         logger.info(
@@ -45,26 +35,12 @@ async def create_or_resume_telegram_session(
         )
         return {'application_uuid': str(existing_application.id)}
 
-    new_application = Application(
-        telegram_id=telegram_id,
-        status=ApplicationStatus.DRAFT.value,
-        data={},
-    )
-    session.add(new_application)
-    await session.commit()
-    await session.refresh(new_application)
-
-    logger.info(
-        f'Created new session for telegram_id={telegram_id} '
-        f'with new application_uuid={new_application.id}'
-    )
+    new_application = await repo.create_for_telegram_user(telegram_id)
     return {'application_uuid': str(new_application.id)}
 
 
 @router.post('/web', response_model=SessionResponse)
-async def create_web_session(
-    session: AsyncSession = Depends(get_async_session),
-):
+async def create_web_session(repo: AppRepo):
     """
     Creates a new session for a user starting from the web widget.
 
@@ -72,42 +48,26 @@ async def create_web_session(
     and returns its unique UUID. The frontend is responsible for storing
     this UUID (e.g., in a cookie) to manage the session.
     """
-    new_application = Application(
-        telegram_id=None,
-        status=ApplicationStatus.DRAFT.value,
-        data={},
-    )
-    session.add(new_application)
-    await session.commit()
-    await session.refresh(new_application)
-
-    logger.info(f'Created new web session with application_uuid={new_application.id}')
+    new_application = await repo.create_for_web_user()
     return {'application_uuid': str(new_application.id)}
 
 
 @router.get('/telegram/status', response_model=ApplicationStatusResponse)
 async def get_telegram_application_status(
+    repo: AppRepo,
     telegram_id: int = Query(..., description='The Telegram ID of the user.'),
-    session: AsyncSession = Depends(get_async_session),
 ):
     """
     Gets the status of the most recent application for a given Telegram user.
     """
-    query = (
-        select(Application.status)
-        .where(Application.telegram_id == telegram_id)
-        .order_by(desc(Application.created_at))
-        .limit(1)
-    )
-    result = await session.execute(query)
-    application_status = result.scalar_one_or_none()
+    application = await repo.get_latest_by_telegram_id(telegram_id)
 
-    if application_status is None:
+    if application is None:
         logger.warning(f'No application found for telegram_id={telegram_id}')
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f'No application found for Telegram user {telegram_id}',
         )
 
-    logger.info(f'Status for telegram_id={telegram_id} is "{application_status}"')
-    return {'status': application_status}
+    logger.info(f'Status for telegram_id={telegram_id} is "{application.status}"')
+    return {'status': application.status}

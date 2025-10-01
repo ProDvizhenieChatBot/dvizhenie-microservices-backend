@@ -1,10 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import update
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from fastapi import APIRouter, HTTPException, status
 
-from app.core.db import get_async_session
-from app.models.db_models import FormSchema
+from app.core.dependencies import FormRepo
 from app.schemas.forms import FormSchemaUpload
 
 
@@ -13,14 +9,12 @@ admin_router = APIRouter()
 
 
 @router.get('/schema/active', response_model=dict)
-async def get_active_form_schema(session: AsyncSession = Depends(get_async_session)):
+async def get_active_form_schema(repo: FormRepo):
     """
     Returns the currently active form schema from the database.
     This is used by the frontend to render the application form.
     """
-    query = select(FormSchema).where(FormSchema.is_active.is_(True))
-    result = await session.execute(query)
-    active_schema = result.scalar_one_or_none()
+    active_schema = await repo.get_active_schema()
 
     if not active_schema:
         raise HTTPException(
@@ -36,10 +30,7 @@ async def get_active_form_schema(session: AsyncSession = Depends(get_async_sessi
     status_code=status.HTTP_201_CREATED,
     summary='(Admin) Upload a new form schema and set it as active',
 )
-async def upload_new_schema(
-    schema_upload: FormSchemaUpload,
-    session: AsyncSession = Depends(get_async_session),
-):
+async def upload_new_schema(schema_upload: FormSchemaUpload, repo: FormRepo):
     """
     (Admin) Uploads a new version of the form schema.
 
@@ -47,14 +38,5 @@ async def upload_new_schema(
     1. Sets `is_active = false` for all existing schemas.
     2. Creates a new schema record with the provided data and sets `is_active = true`.
     """
-    async with session.begin():
-        await session.execute(update(FormSchema).values(is_active=False))
-
-        new_schema = FormSchema(
-            version=schema_upload.version,
-            schema_data=schema_upload.schema_data,
-            is_active=True,
-        )
-        session.add(new_schema)
-
-    return {'message': f'Schema version {schema_upload.version} has been uploaded and activated.'}
+    new_schema = await repo.create_and_set_active_schema(schema_upload)
+    return {'message': f'Schema version {new_schema.version} has been uploaded and activated.'}
