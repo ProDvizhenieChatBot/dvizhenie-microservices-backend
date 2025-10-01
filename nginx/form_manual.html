@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Руководство по JSON-схеме для анкеты</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+        }
+        h1 { font-size: 2em; }
+        h2 { font-size: 1.5em; margin-top: 40px; }
+        code {
+            font-family: "Courier New", Courier, monospace;
+            background-color: #ecf0f1;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #bdc3c7;
+            overflow-x: auto;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .required-star {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .note {
+            background-color: #e9f5ff;
+            border-left: 5px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Руководство по JSON-схеме для анкеты</h1>
+    <p class="note">Этот документ описывает структуру JSON-файла, который используется для динамического построения анкеты в веб-приложении (Mini App). Редактирование этого файла позволяет изменять вопросы, варианты ответов и логику анкеты без изменения кода.</p>
+
+    <h2>Общая структура схемы</h2>
+    <p>Схема состоит из нескольких ключей верхнего уровня, которые определяют метаданные и содержат массив шагов анкеты.</p>
+    <pre><code>{
+  "name": "Название анкеты",
+  "version": "1.0",
+  "start_step_id": "consent",
+  "steps": [
+    { ... объект шага 1 ... },
+    { ... объект шага 2 ... },
+    ...
+  ]
+}</code></pre>
+    <ul>
+        <li><code>name</code> (string): Человекочитаемое название анкеты.</li>
+        <li><code>version</code> (string): Версия схемы.</li>
+        <li><code>start_step_id</code> (string): ID первого шага, с которого начинается анкета.</li>
+        <li><code>steps</code> (array): Массив объектов, каждый из которых описывает один шаг анкеты.</li>
+    </ul>
+
+    <h2>Объект "Шаг" (Step)</h2>
+    <p>Каждый шаг представляет собой один экран в анкете. Он содержит заголовок, набор полей для заполнения и правила перехода к следующему шагу.</p>
+    <pre><code>{
+  "step_id": "main_data",
+  "title": "Основные данные",
+  "fields": [
+    { ... объект поля 1 ... },
+    { ... объект поля 2 ... }
+  ],
+  "navigation": { ... объект навигации ... }
+}</code></pre>
+    <ul>
+        <li><code>step_id</code> (string): Уникальный идентификатор шага. Используется в <code>start_step_id</code> и в навигации.</li>
+        <li><code>title</code> (string): Заголовок, который видит пользователь на этом шаге.</li>
+        <li><code>fields</code> (array): Массив объектов полей, которые нужно отобразить на этом шаге.</li>
+        <li><code>navigation</code> (object): Объект, описывающий, как перейти к следующему шагу.</li>
+    </ul>
+
+    <h2>Объект "Поле" (Field)</h2>
+    <p>Поле — это конкретный элемент ввода: текстовое поле, дата, кнопка, загрузка файла и т.д.</p>
+    <pre><code>{
+  "field_id": "beneficiary_name",
+  "type": "text",
+  "label": "ФИО подопечного",
+  "required": true,
+  "options": [ ... ],
+  "condition": { ... }
+}</code></pre>
+    <h3>Основные атрибуты:</h3>
+    <ul>
+        <li><code>field_id</code> (string): Уникальный идентификатор поля в рамках всей анкеты.</li>
+        <li><code>type</code> (string): Тип поля. Определяет, как оно будет выглядеть и работать.</li>
+        <li><code>label</code> (string): Текст вопроса или подпись к полю.</li>
+        <li><code>required</code> (boolean, опционально): Если <code>true</code>, пользователь не сможет перейти дальше, не заполнив это поле.</li>
+    </ul>
+
+    <h3>Типы полей (<code>type</code>):</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Тип</th>
+                <th>Описание</th>
+                <th>Доп. атрибуты</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>info</code></td>
+                <td>Информационный блок (только текст).</td>
+                <td><code>text</code> (string)</td>
+            </tr>
+            <tr>
+                <td><code>text</code></td>
+                <td>Однострочное текстовое поле.</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td><code>textarea</code></td>
+                <td>Многострочное текстовое поле.</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td><code>date</code></td>
+                <td>Выбор даты.</td>
+                <td><code>validation: {"maxDate": "today"}</code></td>
+            </tr>
+            <tr>
+                <td><code>phone</code></td>
+                <td>Ввод номера телефона с маской.</td>
+                <td><code>validation: {"mask": "+7 (___) ___-__-__"}</code></td>
+            </tr>
+            <tr>
+                <td><code>email</code></td>
+                <td>Ввод email с валидацией формата.</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td><code>single_choice_buttons</code></td>
+                <td>Выбор одного варианта из нескольких (кнопки).</td>
+                <td><code>options</code> (array of strings)</td>
+            </tr>
+            <tr>
+                <td><code>multiple_choice_checkbox</code></td>
+                <td>Выбор нескольких вариантов (чекбоксы).</td>
+                <td><code>options</code> (array of strings)</td>
+            </tr>
+             <tr>
+                <td><code>file</code></td>
+                <td>Загрузка одного или нескольких файлов.</td>
+                <td><code>allow_multiple</code> (boolean)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Логика навигации и условных полей</h2>
+    <h3>1. Навигация (<code>navigation</code>)</h3>
+    <p>Определяет, какой шаг будет следующим.</p>
+    <h4>Прямой переход:</h4>
+    <pre><code>"navigation": { "type": "direct", "next_step_id": "history_adult" }</code></pre>
+    <p>После текущего шага всегда будет показан шаг с ID <code>history_adult</code>.</p>
+    
+    <h4>Условный переход:</h4>
+    <pre><code>"navigation": {
+  "type": "conditional",
+  "source_field_id": "applicant_role",
+  "rules": [
+    { "value": "Мать/отец", "next_step_id": "history_child" },
+    { "value": "Опекун", "next_step_id": "history_child" }
+  ],
+  "default_next_step_id": "history_adult"
+}</code></pre>
+    <p>Если в поле <code>applicant_role</code> выбрано "Мать/отец" или "Опекун", следующим будет шаг <code>history_child</code>. Во всех остальных случаях — <code>history_adult</code>.</p>
+
+    <h3>2. Условное отображение полей (<code>condition</code>)</h3>
+    <p>Позволяет показывать или скрывать поле в зависимости от значения другого поля на этом же шаге.</p>
+    <pre><code>{
+  "field_id": "tsr_certificate_details",
+  "type": "textarea",
+  "label": "Укажите номер, сумму и срок действия сертификата",
+  "required": true,
+  "condition": {
+    "field_id": "has_tsr_certificate",
+    "operator": "equals",
+    "value": "Да"
+  }
+}</code></pre>
+    <p>Это поле будет показано только если в поле <code>has_tsr_certificate</code> выбран ответ "Да".</p>
+    <ul>
+        <li><b>Операторы:</b> <code>equals</code>, <code>not_equals</code>, <code>in</code> (значение входит в массив), <code>not_in</code>.</li>
+    </ul>
+</div>
+
+</body>
+</html>

@@ -1,6 +1,5 @@
-# services/bot_service/src/app/bot/handlers.py
 from aiogram import Router, types
-from aiogram.filters import CommandStart
+from aiogram.filters import Command, CommandStart
 from aiogram.types import WebAppInfo
 
 from app.core.config import settings
@@ -8,6 +7,18 @@ from app.internal_clients.api_client import api_client
 
 
 router = Router()
+
+
+# A mapping from status keys to human-readable text
+STATUS_MESSAGES = {
+    'draft': 'Ваша анкета находится в процессе заполнения. Вы можете вернуться к ней в любой момент.',  # noqa: E501
+    'new': 'Ваша заявка принята и ожидает рассмотрения. Мы свяжемся с вами в ближайшее время.',
+    'in_progress': 'Ваша заявка находится в обработке у специалиста фонда.',
+    'completed': 'Ваша заявка успешно обработана и закрыта.',
+    'rejected': 'К сожалению, по вашей заявке было принято отрицательное решение. Свяжитесь с нами для уточения деталей.',  # noqa: E501
+    'not_found': 'Мы не нашли ваших заявок. Нажмите /start, чтобы начать заполнение анкеты.',
+}
+DEFAULT_ERROR_MESSAGE = 'Не удалось получить статус вашей заявки. Пожалуйста, попробуйте позже.'
 
 
 @router.message(CommandStart())
@@ -46,3 +57,20 @@ async def start_handler(message: types.Message):
         )
     else:
         await message.answer('Произошла ошибка при создании сессии. Пожалуйста, попробуйте позже.')
+
+
+@router.message(Command('status'))
+async def status_handler(message: types.Message):
+    """
+    Handles the /status command.
+    Fetches and displays the current status of the user's latest application.
+    """
+    if not message.from_user:
+        await message.answer('Не удалось определить пользователя. Пожалуйста, попробуйте еще раз.')
+        return
+
+    user_id = message.from_user.id
+    status_key = await api_client.get_telegram_application_status(telegram_id=user_id)
+
+    response_text = STATUS_MESSAGES.get(str(status_key), DEFAULT_ERROR_MESSAGE)
+    await message.answer(response_text)
