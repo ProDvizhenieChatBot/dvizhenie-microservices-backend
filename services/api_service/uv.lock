@@ -48,6 +48,8 @@ dependencies = [
     { name = "asyncpg" },
     { name = "fastapi" },
     { name = "httpx" },
+    { name = "openpyxl" },
+    { name = "pandas" },
     { name = "psycopg2-binary" },
     { name = "pydantic-settings" },
     { name = "sqlalchemy" },
@@ -56,9 +58,6 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
-    { name = "httpx" },
-    { name = "openpyxl" },
-    { name = "pandas" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -71,9 +70,8 @@ requires-dist = [
     { name = "asyncpg", specifier = "==0.29.0" },
     { name = "fastapi", specifier = "==0.111.0" },
     { name = "httpx", specifier = "==0.27.0" },
-    { name = "httpx", marker = "extra == 'dev'", specifier = "==0.27.0" },
-    { name = "openpyxl", marker = "extra == 'dev'", specifier = "==3.1.2" },
-    { name = "pandas", marker = "extra == 'dev'", specifier = "==2.2.2" },
+    { name = "openpyxl", specifier = "==3.1.2" },
+    { name = "pandas", specifier = "==2.2.2" },
     { name = "psycopg2-binary", specifier = "==2.9.9" },
     { name = "pydantic-settings", specifier = "==2.2.1" },
     { name = "pyright", marker = "extra == 'dev'", specifier = "==1.1.405" },
