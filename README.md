@@ -77,9 +77,6 @@
 
 ### Документация API (Swagger/ReDoc)
 
-*   **Единая статическая документация:** `http://localhost:8000/openapi`
-    *   Этот файл `openapi.yaml` редактируется вручную и описывает все эндпоинты системы.
-
 *   **Динамическая документация `api-service` (через шлюз):**
     *   Swagger UI: `http://localhost:8000/docs`
     *   ReDoc: `http://localhost:8000/redoc`
