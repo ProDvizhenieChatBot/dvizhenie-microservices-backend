@@ -1,15 +1,10 @@
-# services/api_service/src/app/api/applications.py
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
-from app.core.db import get_async_session
-from app.models.db_models import Application, ApplicationFile
+from app.core.dependencies import AppRepo
 from app.schemas.applications import (
     ApplicationAdmin,
     ApplicationAdminUpdate,
@@ -26,8 +21,6 @@ from app.services.zip_service import create_documents_zip_archive
 router = APIRouter()
 admin_router = APIRouter()
 
-# --- Admin Endpoints ---
-
 
 @admin_router.get(
     '/',
@@ -35,26 +28,15 @@ admin_router = APIRouter()
     summary='(Admin) Get a list of all applications',
 )
 async def get_all_applications(
+    repo: AppRepo,
     status: ApplicationStatus | None = Query(None, description='Filter by application status'),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
-    session: AsyncSession = Depends(get_async_session),
 ):
     """
     (Admin) Retrieves a list of applications, with optional filtering and pagination.
     """
-    query = (
-        select(Application)
-        .options(selectinload(Application.files))
-        .order_by(Application.created_at)
-    )
-
-    if status:
-        query = query.where(Application.status == status.value)
-
-    query = query.limit(limit).offset(offset)
-    result = await session.execute(query)
-    return result.scalars().all()
+    return await repo.get_all(status=status, limit=limit, offset=offset)
 
 
 @admin_router.get(
@@ -62,15 +44,12 @@ async def get_all_applications(
     response_class=StreamingResponse,
     summary='(Admin) Export applications to an XLSX file',
 )
-async def export_applications_to_xlsx(session: AsyncSession = Depends(get_async_session)):
+async def export_applications_to_xlsx(repo: AppRepo):
     """
     (Admin) Fetches all applications from the database, flattens the data,
     and returns it as an XLSX file.
     """
-    query = select(Application).options(selectinload(Application.files))
-    result = await session.execute(query)
-    applications = result.scalars().all()
-
+    applications = await repo.get_all(limit=10000)  # A large limit to get all applications
     xlsx_buffer = generate_xlsx_export(applications)
 
     return StreamingResponse(
@@ -89,19 +68,13 @@ async def export_applications_to_xlsx(session: AsyncSession = Depends(get_async_
 )
 async def download_documents_as_zip(
     application_uuid: UUID,
-    session: AsyncSession = Depends(get_async_session),
+    repo: AppRepo,
 ):
     """
     (Admin) Generates and streams a ZIP file containing all documents
     attached to a specific application.
     """
-    query = (
-        select(Application)
-        .where(Application.id == application_uuid)
-        .options(selectinload(Application.files))
-    )
-    result = await session.execute(query)
-    db_application = result.scalar_one_or_none()
+    db_application = await repo.get_by_uuid(application_uuid, with_files=True)
 
     if not db_application:
         raise HTTPException(
@@ -131,18 +104,12 @@ async def download_documents_as_zip(
 )
 async def get_application_details_admin(
     application_uuid: UUID,
-    session: AsyncSession = Depends(get_async_session),
+    repo: AppRepo,
 ):
     """
     (Admin) Retrieves full details for a specific application, including linked files.
     """
-    query = (
-        select(Application)
-        .where(Application.id == application_uuid)
-        .options(selectinload(Application.files))
-    )
-    result = await session.execute(query)
-    db_application = result.scalar_one_or_none()
+    db_application = await repo.get_by_uuid(application_uuid, with_files=True)
 
     if db_application is None:
         raise HTTPException(
@@ -160,14 +127,12 @@ async def get_application_details_admin(
 async def update_application_admin(
     application_uuid: UUID,
     update_data: ApplicationAdminUpdate,
-    session: AsyncSession = Depends(get_async_session),
+    repo: AppRepo,
 ):
     """
     (Admin) Updates an application's status or internal admin comment.
     """
-    query = select(Application).where(Application.id == application_uuid)
-    result = await session.execute(query)
-    db_application = result.scalar_one_or_none()
+    db_application = await repo.get_by_uuid(application_uuid)
 
     if db_application is None:
         raise HTTPException(
@@ -175,20 +140,7 @@ async def update_application_admin(
             detail=f'Application with id {application_uuid} not found',
         )
 
-    if update_data.status is not None:
-        db_application.status = update_data.status.value
-    if update_data.admin_comment is not None:
-        db_application.admin_comment = update_data.admin_comment
-
-    session.add(db_application)
-    await session.commit()
-
-    await session.refresh(db_application, attribute_names=['files'])
-
-    return db_application
-
-
-# --- Public Endpoints for Mini App ---
+    return await repo.update_admin_details(db_application, update_data)
 
 
 @router.get(
@@ -198,22 +150,20 @@ async def update_application_admin(
 )
 async def get_application_status_public(
     application_uuid: UUID,
-    session: AsyncSession = Depends(get_async_session),
+    repo: AppRepo,
 ):
     """
     Retrieves the current status of a single application by its UUID.
     This is a public endpoint for the web-widget to check status.
     """
-    query = select(Application.status).where(Application.id == application_uuid)
-    result = await session.execute(query)
-    application_status = result.scalar_one_or_none()
+    db_application = await repo.get_by_uuid(application_uuid)
 
-    if application_status is None:
+    if db_application is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f'Application with id {application_uuid} not found',
         )
-    return {'status': application_status}
+    return {'status': db_application.status}
 
 
 @router.get(
@@ -223,12 +173,12 @@ async def get_application_status_public(
 )
 async def get_application_data_public(
     application_uuid: UUID,
-    session: AsyncSession = Depends(get_async_session),
+    repo: AppRepo,
 ):
     """
     Retrieves the current data for an application, used by the Mini App to resume.
     """
-    db_application = await session.get(Application, application_uuid)
+    db_application = await repo.get_by_uuid(application_uuid)
     if db_application is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -245,12 +195,12 @@ async def get_application_data_public(
 async def save_application_progress(
     application_uuid: UUID,
     application_in: ApplicationUpdate,
-    session: AsyncSession = Depends(get_async_session),
+    repo: AppRepo,
 ):
     """
     Saves the user's progress from the Mini App.
     """
-    db_application = await session.get(Application, application_uuid)
+    db_application = await repo.get_by_uuid(application_uuid)
     if db_application is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -263,11 +213,7 @@ async def save_application_progress(
             detail='Can only update applications in draft status.',
         )
 
-    db_application.data = application_in.data
-    session.add(db_application)
-    await session.commit()
-    await session.refresh(db_application)
-    return db_application
+    return await repo.update_progress(db_application, application_in)
 
 
 @router.post(
@@ -278,24 +224,17 @@ async def save_application_progress(
 async def link_file_to_application(
     application_uuid: UUID,
     file_link: FileLinkRequest,
-    session: AsyncSession = Depends(get_async_session),
+    repo: AppRepo,
 ):
     """
     After a file is uploaded to the file-storage-service, the Mini App calls
     this endpoint to create a record linking the file_id to the application.
     """
-    db_application = await session.get(Application, application_uuid)
+    db_application = await repo.get_by_uuid(application_uuid)
     if not db_application:
         raise HTTPException(status_code=404, detail='Application not found')
 
-    new_file_link = ApplicationFile(
-        application_id=application_uuid,
-        file_id=file_link.file_id,
-        original_filename=file_link.original_filename,
-        form_field_id=file_link.form_field_id,
-    )
-    session.add(new_file_link)
-    await session.commit()
+    await repo.link_file(application_uuid, file_link)
     return {'message': 'File linked successfully'}
 
 
@@ -306,12 +245,12 @@ async def link_file_to_application(
 )
 async def submit_application(
     application_uuid: UUID,
-    session: AsyncSession = Depends(get_async_session),
+    repo: AppRepo,
 ):
     """
     Finalizes the application, changing its status from 'draft' to 'new'.
     """
-    db_application = await session.get(Application, application_uuid)
+    db_application = await repo.get_by_uuid(application_uuid)
     if db_application is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -324,7 +263,5 @@ async def submit_application(
             detail='Application has already been submitted.',
         )
 
-    db_application.status = ApplicationStatus.NEW.value
-    session.add(db_application)
-    await session.commit()
+    await repo.submit_application(db_application)
     return {'message': 'Application submitted successfully'}

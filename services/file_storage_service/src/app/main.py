@@ -9,7 +9,6 @@ from app.core.config import settings
 from .s3_client import create_bucket_if_not_exists
 
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
@@ -17,10 +16,8 @@ logging.basicConfig(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # On startup, ensure the S3 bucket exists
     await create_bucket_if_not_exists()
     yield
-    # On shutdown, you can add cleanup logic here if needed
 
 
 app = FastAPI(title=settings.APP_TITLE, lifespan=lifespan)
