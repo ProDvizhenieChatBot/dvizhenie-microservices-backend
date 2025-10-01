@@ -1,5 +1,6 @@
 # services/api_service/src/app/main.py
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
@@ -10,15 +11,29 @@ from app.api.applications import (
 )
 from app.api.schemas import admin_router as schemas_admin_router, router as schemas_public_router
 from app.core.config import settings
+from app.core.initial_data import seed_initial_form_schema
 
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+logger = logging.getLogger(__name__)
 
 
-app = FastAPI(title=settings.APP_TITLE)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Application lifespan manager.
+    - On startup, it seeds the initial form schema if the database is empty.
+    """
+    logger.info('API Service is starting up...')
+    await seed_initial_form_schema()
+    yield
+    logger.info('API Service is shutting down...')
+
+
+app = FastAPI(title=settings.APP_TITLE, lifespan=lifespan)
 
 # Register API routers
 app.include_router(applications_public_router, prefix='/api/v1/applications', tags=['Applications'])
