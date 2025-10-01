@@ -1,10 +1,14 @@
 import io
+import logging
 import zipfile
 
 import httpx
 
 from app.core.config import Settings
 from app.models.db_models import Application
+
+
+logger = logging.getLogger(__name__)
 
 
 async def create_documents_zip_archive(app: Application, settings: Settings) -> io.BytesIO:
@@ -43,9 +47,10 @@ async def create_documents_zip_archive(app: Application, settings: Settings) -> 
                     zip_file.writestr(file_record.original_filename, file_bytes)
 
                 except httpx.HTTPStatusError as e:
-                    print(
-                        f'Failed to download file {file_record.file_id} '
-                        f'for application {app.id}: {e}'
+                    logger.error(
+                        f"Failed to download file '{file_record.file_id}' for application "
+                        f"'{app.id}'. Status: {e.response.status_code}. Details: {e.response.text}",
+                        exc_info=True,
                     )
                     error_message = f'Failed to download this file. Error: {e.response.status_code}'
                     zip_file.writestr(f'{file_record.original_filename}.error.txt', error_message)

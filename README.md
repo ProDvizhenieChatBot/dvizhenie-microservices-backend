@@ -23,6 +23,7 @@
 *   **Оркестрация:** Docker, Docker Compose
 *   **Веб-сервер/API Gateway:** Nginx
 *   **Инструменты разработки:** Ruff, Pyright, Pre-commit, UV
+*   **Тестирование и визуализация:** Postman, DBeaver, Pytest 
 
 ## Требования
 

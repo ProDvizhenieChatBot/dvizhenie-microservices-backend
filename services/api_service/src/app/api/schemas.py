@@ -1,20 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.core.db import get_async_session
 from app.models.db_models import FormSchema
+from app.schemas.forms import FormSchemaUpload
 
 
 router = APIRouter()
 admin_router = APIRouter()
-
-
-class FormSchemaUpload(BaseModel):
-    version: str
-    schema_data: dict
 
 
 @router.get('/schema/active', response_model=dict)
