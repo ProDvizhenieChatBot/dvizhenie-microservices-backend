@@ -1,4 +1,6 @@
 # services/api_service/src/app/api/sessions.py
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import desc
@@ -11,6 +13,7 @@ from app.schemas.applications import ApplicationStatus, ApplicationStatusRespons
 
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 # --- Pydantic Schemas for this endpoint ---
@@ -49,6 +52,10 @@ async def create_or_resume_telegram_session(
 
     if existing_application:
         # 2. If found, return its UUID
+        logger.info(
+            f'Resuming session for telegram_id={telegram_id} '
+            f'with application_uuid={existing_application.id}'
+        )
         return {'application_uuid': str(existing_application.id)}
 
     # 3. If not found, create a new one
@@ -61,6 +68,10 @@ async def create_or_resume_telegram_session(
     await session.commit()
     await session.refresh(new_application)
 
+    logger.info(
+        f'Created new session for telegram_id={telegram_id} '
+        f'with new application_uuid={new_application.id}'
+    )
     return {'application_uuid': str(new_application.id)}
 
 
@@ -84,6 +95,7 @@ async def create_web_session(
     await session.commit()
     await session.refresh(new_application)
 
+    logger.info(f'Created new web session with application_uuid={new_application.id}')
     return {'application_uuid': str(new_application.id)}
 
 
@@ -105,9 +117,11 @@ async def get_telegram_application_status(
     application_status = result.scalar_one_or_none()
 
     if application_status is None:
+        logger.warning(f'No application found for telegram_id={telegram_id}')
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f'No application found for Telegram user {telegram_id}',
         )
 
+    logger.info(f'Status for telegram_id={telegram_id} is "{application_status}"')
     return {'status': application_status}

@@ -1,4 +1,5 @@
 # services/file_storage_service/src/app/api/files.py
+import logging
 import uuid
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from app.schemas.files import FileDownloadResponse, FileUploadResponse
 
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 URL_EXPIRATION_SECONDS = 3600  # 1 hour
 
@@ -25,14 +27,20 @@ async def upload_file(file: UploadFile, s3_client: S3Client = Depends(get_s3_cli
     file_id = f'{uuid.uuid4()}{file_extension}'
     bucket_name = settings.MINIO_BUCKET_NAME
 
+    logger.info(
+        f'Attempting to upload file "{file.filename}" with content-type "{file.content_type}"'
+    )
+
     try:
         await s3_client.upload_fileobj(file.file, bucket_name, file_id)
     except Exception as e:
+        logger.error(f'Failed to upload file "{file.filename}" to S3.', exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f'Failed to upload file to S3: {e}',
         ) from e
 
+    logger.info(f'Successfully uploaded file "{file.filename}" with new file_id "{file_id}".')
     return {
         'file_id': file_id,
         'filename': file.filename,
@@ -50,6 +58,7 @@ async def get_download_link(file_id: str, s3_client: S3Client = Depends(get_s3_c
     Generates a temporary, pre-signed URL for downloading a file from MinIO.
     """
     bucket_name = settings.MINIO_BUCKET_NAME
+    logger.info(f'Generating download link for file_id: {file_id}')
 
     try:
         await s3_client.head_object(Bucket=bucket_name, Key=file_id)
@@ -66,10 +75,13 @@ async def get_download_link(file_id: str, s3_client: S3Client = Depends(get_s3_c
     except ClientError as e:
         error_code = e.response.get('Error', {}).get('Code')
         if error_code == '404':
+            logger.warning(f'File not found when generating link for file_id: {file_id}')
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f'File with id "{file_id}" not found.',
             ) from e
+
+        logger.error(f'S3 error for file_id {file_id}: {error_code}', exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f'An S3 error occurred: {e}',
