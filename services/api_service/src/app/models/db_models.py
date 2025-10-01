@@ -1,4 +1,3 @@
-# services/api_service/src/app/models/db_models.py
 import uuid
 from datetime import datetime
 from typing import Any
@@ -6,6 +5,7 @@ from typing import Any
 from sqlalchemy import (
     JSON,
     BigInteger,
+    Boolean,
     DateTime,
     ForeignKey,
     Integer,
@@ -60,4 +60,17 @@ class ApplicationFile(Base):
     application: Mapped['Application'] = relationship(back_populates='files')
 
 
-# TODO: Define FormSchema (to store schemas in the DB)
+class FormSchema(Base):
+    """Stores versions of the application form schema."""
+
+    __tablename__ = 'form_schemas'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    version: Mapped[str] = mapped_column(String, nullable=False)
+    schema_data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, server_default='false', nullable=False, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )

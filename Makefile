@@ -22,5 +22,5 @@ image:
 	@docker push ${BACKEND_BOT_DOCKER_IMAGE}
 
 	@cd $(CURRENT_DIR)/services/file_storage_service && \
-	@docker buildx build --platform linux/amd64 --no-cache -t ${BACKEND_STORAGE_DOCKER_IMAGE} .
+	docker buildx build --platform linux/amd64 --no-cache -t ${BACKEND_STORAGE_DOCKER_IMAGE} .
 	@docker push ${BACKEND_STORAGE_DOCKER_IMAGE}

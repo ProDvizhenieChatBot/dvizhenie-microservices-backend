@@ -1,16 +1,50 @@
+# services/api_service/src/app/main.py
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
-from app.api import applications, auth, schemas, sessions
+from app.api import sessions
+from app.api.applications import (
+    admin_router as applications_admin_router,
+    router as applications_public_router,
+)
+from app.api.schemas import admin_router as schemas_admin_router, router as schemas_public_router
 from app.core.config import settings
+from app.core.initial_data import seed_initial_form_schema
 
 
-app = FastAPI(title=settings.APP_TITLE)
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Application lifespan manager.
+    - On startup, it seeds the initial form schema if the database is empty.
+    """
+    logger.info('API Service is starting up...')
+    await seed_initial_form_schema()
+    yield
+    logger.info('API Service is shutting down...')
+
+
+app = FastAPI(title=settings.APP_TITLE, lifespan=lifespan)
 
 # Register API routers
-app.include_router(applications.router, prefix='/api/v1/applications', tags=['Applications'])
-app.include_router(schemas.router, prefix='/api/v1/forms', tags=['Forms'])
+app.include_router(applications_public_router, prefix='/api/v1/applications', tags=['Applications'])
+app.include_router(
+    applications_admin_router, prefix='/api/v1/admin/applications', tags=['Admin: Applications']
+)
+app.include_router(schemas_public_router, prefix='/api/v1/forms', tags=['Forms'])
+app.include_router(
+    schemas_admin_router, prefix='/api/v1', tags=['Admin: Forms']
+)  # Note: Nginx handles /admin path prefix
 app.include_router(sessions.router, prefix='/api/v1/sessions', tags=['Sessions'])
-app.include_router(auth.router, prefix='/api/v1/auth', tags=['Authentication'])
 
 
 @app.get('/api/v1/health')

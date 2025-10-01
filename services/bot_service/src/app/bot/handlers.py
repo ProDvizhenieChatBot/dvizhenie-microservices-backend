@@ -1,6 +1,7 @@
-# services/bot_service/src/app/bot/handlers.py
+import logging
+
 from aiogram import Router, types
-from aiogram.filters import CommandStart
+from aiogram.filters import Command, CommandStart
 from aiogram.types import WebAppInfo
 
 from app.core.config import settings
@@ -8,6 +9,19 @@ from app.internal_clients.api_client import api_client
 
 
 router = Router()
+logger = logging.getLogger(__name__)
+
+
+# A mapping from status keys to human-readable text
+STATUS_MESSAGES = {
+    'draft': 'Ваша анкета находится в процессе заполнения. Вы можете вернуться к ней в любой момент.',  # noqa: E501
+    'new': 'Ваша заявка принята и ожидает рассмотрения. Мы свяжемся с вами в ближайшее время.',
+    'in_progress': 'Ваша заявка находится в обработке у специалиста фонда.',
+    'completed': 'Ваша заявка успешно обработана и закрыта.',
+    'rejected': 'К сожалению, по вашей заявке было принято отрицательное решение. Свяжитесь с нами для уточения деталей.',  # noqa: E501
+    'not_found': 'Мы не нашли ваших заявок. Нажмите /start, чтобы начать заполнение анкеты.',
+}
+DEFAULT_ERROR_MESSAGE = 'Не удалось получить статус вашей заявки. Пожалуйста, попробуйте позже.'
 
 
 @router.message(CommandStart())
@@ -23,9 +37,11 @@ async def start_handler(message: types.Message):
         return
 
     user_id = message.from_user.id
+    logger.info(f'User {user_id} triggered /start command.')
     application_uuid = await api_client.create_telegram_session(telegram_id=user_id)
 
     if application_uuid:
+        logger.info(f'Session created/resumed for user {user_id} with UUID: {application_uuid}')
         # The token is now the UUID of the application
         mini_app_url = f'{settings.MINI_APP_URL}?token={application_uuid}'
 
@@ -45,4 +61,24 @@ async def start_handler(message: types.Message):
             reply_markup=keyboard,
         )
     else:
+        logger.error(f'Failed to create a session for user {user_id}.')
         await message.answer('Произошла ошибка при создании сессии. Пожалуйста, попробуйте позже.')
+
+
+@router.message(Command('status'))
+async def status_handler(message: types.Message):
+    """
+    Handles the /status command.
+    Fetches and displays the current status of the user's latest application.
+    """
+    if not message.from_user:
+        await message.answer('Не удалось определить пользователя. Пожалуйста, попробуйте еще раз.')
+        return
+
+    user_id = message.from_user.id
+    logger.info(f'User {user_id} triggered /status command.')
+    status_key = await api_client.get_telegram_application_status(telegram_id=user_id)
+    logger.info(f'Status for user {user_id} is "{status_key}"')
+
+    response_text = STATUS_MESSAGES.get(str(status_key), DEFAULT_ERROR_MESSAGE)
+    await message.answer(response_text)
