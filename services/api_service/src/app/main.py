@@ -1,4 +1,6 @@
 # services/api_service/src/app/main.py
+import logging
+
 from fastapi import FastAPI
 
 from app.api import sessions
@@ -8,6 +10,12 @@ from app.api.applications import (
 )
 from app.api.schemas import admin_router as schemas_admin_router, router as schemas_public_router
 from app.core.config import settings
+
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 
 app = FastAPI(title=settings.APP_TITLE)

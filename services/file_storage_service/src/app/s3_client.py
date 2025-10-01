@@ -1,8 +1,12 @@
+import logging
+
 import aioboto3
 from botocore.exceptions import ClientError
 
 from app.core.config import settings
 
+
+logger = logging.getLogger(__name__)
 
 # The session will be reused throughout the application's lifecycle
 session = aioboto3.Session(
@@ -28,28 +32,28 @@ async def create_bucket_if_not_exists():
     This function is intended to be called on application startup.
     """
     bucket_name = settings.MINIO_BUCKET_NAME
-    print(f'Checking if bucket "{bucket_name}" exists...')
+    logger.info(f'Checking if bucket "{bucket_name}" exists...')
 
     async for s3 in get_s3_client():
         try:
             # Check if the bucket exists by making a HeadBucket request
             await s3.head_bucket(Bucket=bucket_name)
-            print(f'Bucket "{bucket_name}" already exists.')
+            logger.info(f'Bucket "{bucket_name}" already exists.')
         except ClientError as e:
             # Safely access the error code using .get() method
             error_code = e.response.get('Error', {}).get('Code')
 
             # If the error is a 404, the bucket does not exist
             if error_code == '404':
-                print(f'Bucket "{bucket_name}" not found. Creating it...')
+                logger.info(f'Bucket "{bucket_name}" not found. Creating it...')
                 try:
                     # Create the bucket
                     await s3.create_bucket(Bucket=bucket_name)
-                    print(f'Bucket "{bucket_name}" created successfully.')
+                    logger.info(f'Bucket "{bucket_name}" created successfully.')
                 except ClientError as create_error:
-                    print(f'Error creating bucket: {create_error}')
+                    logger.error(f'Error creating bucket: {create_error}', exc_info=True)
                     raise
             else:
                 # Re-raise other client errors
-                print(f'An unexpected S3 error occurred: {e}')
+                logger.error(f'An unexpected S3 error occurred: {e}', exc_info=True)
                 raise

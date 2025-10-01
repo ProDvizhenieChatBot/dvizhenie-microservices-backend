@@ -1,6 +1,11 @@
+import logging
+
 import httpx
 
 from app.core.config import settings
+
+
+logger = logging.getLogger(__name__)
 
 
 class ApiClient:
@@ -23,10 +28,15 @@ class ApiClient:
                 data = response.json()
                 return data.get('application_uuid')
             except httpx.HTTPStatusError as e:
-                print(f'HTTP error occurred while creating session for {telegram_id}: {e}')
+                logger.error(
+                    f'HTTP error creating session for {telegram_id}: {e.response.status_code} - '
+                    f'{e.response.text}'
+                )
                 return None
             except Exception as e:
-                print(f'An unexpected error occurred while creating session for {telegram_id}: {e}')
+                logger.error(
+                    f'Unexpected error creating session for {telegram_id}: {e}', exc_info=True
+                )
                 return None
 
     async def get_telegram_application_status(self, telegram_id: int) -> str | None:
@@ -48,10 +58,15 @@ class ApiClient:
                 data = response.json()
                 return data.get('status')
             except httpx.HTTPStatusError as e:
-                print(f'HTTP error occurred while getting status for {telegram_id}: {e}')
+                logger.error(
+                    f'HTTP error getting status for {telegram_id}: {e.response.status_code} - '
+                    f'{e.response.text}'
+                )
                 return None
             except Exception as e:
-                print(f'An unexpected error occurred while getting status for {telegram_id}: {e}')
+                logger.error(
+                    f'Unexpected error getting status for {telegram_id}: {e}', exc_info=True
+                )
                 return None
 
 

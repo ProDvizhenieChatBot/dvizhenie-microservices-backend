@@ -8,7 +8,9 @@ from app.bot.handlers import router as main_router
 from app.core.config import settings
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 
 async def main():
@@ -16,7 +18,7 @@ async def main():
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(main_router)
 
-    print('Starting Telegram Bot Service...')
+    logging.info('Starting Telegram Bot Service...')
     await dp.start_polling(bot)
 
 
