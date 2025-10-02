@@ -206,6 +206,103 @@
 
 *   `.pre-commit-config.yaml`: Конфигурация для pre-commit хуков, обеспечивающих качество и единый стиль кода.
 
+```mermaid
+---
+config:
+  layout: dagre
+  theme: mc
+  look: classic
+---
+flowchart TD
+ subgraph subGraph0["Пользовательские интерфейсы (Frontend)"]
+    direction LR
+        user_tg_bot["TELEGRAM (команды)"]
+        user_mini_app["MINI APP"]
+        user_web_widget["Веб-виджет"]
+        user_admin["Панель администратора"]
+  end
+ subgraph Microservices["Микросервисы"]
+    direction TB
+        api_service["<strong>api-service</strong><br>(FastAPI)<br>Основная бизнес-логика<br>Управление заявками и сессиями"]
+        bot_service["<strong>bot-service</strong><br>(Aiogram)<br>Обрабатывает команды Telegram"]
+        file_storage_service["<strong>file-storage-service</strong><br>(FastAPI)<br>Управляет загрузкой файлов и ссылками"]
+  end
+ subgraph subGraph2["Хранилища данных"]
+    direction TB
+        postgres["<strong>PostgreSQL DB</strong><br>Хранит данные заявок, схемы, метаданные"]
+        minio["<strong>MinIO S3 Storage</strong><br>Хранит физические файлы"]
+  end
+ subgraph subGraph3["Инфраструктура бэкенда"]
+    direction LR
+        nginx(["<strong>NGINX Gateway</strong><br>Точка входа и аутентификация"])
+        Microservices
+        subGraph2
+  end
+    user_tg_bot == /start, /form, /status ==> bot_service
+    user_mini_app == HTTP API Requests ==> nginx
+    user_web_widget == HTTP API Requests ==> nginx
+    user_admin == HTTP API Requests (with Basic Auth) ==> nginx
+    nginx == Маршрутизирует /api/v1/admin/* ==> api_service
+    nginx == Маршрутизирует /api/v1/files/* ==> file_storage_service
+    nginx == Маршрутизирует остальные /api/* ==> api_service
+    bot_service == Создает сессии, получает статус ==> api_service
+    api_service == CRUD Operations<br>(SQLAlchemy) ==> postgres
+    api_service == Запрашивает ссылки для скачивания файлов<br> ==> file_storage_service
+    file_storage_service == Сохраняет и получает файлы ==> minio
+    user_tg_bot@{ shape: hex}
+    user_mini_app@{ shape: hex}
+    user_web_widget@{ shape: hex}
+    user_admin@{ shape: hex}
+    api_service@{ shape: rounded}
+    bot_service@{ shape: rounded}
+    file_storage_service@{ shape: rounded}
+    postgres@{ shape: cyl}
+    minio@{ shape: cyl}
+     user_tg_bot:::frontend
+     user_mini_app:::frontend
+     user_web_widget:::frontend
+     user_admin:::frontend
+     api_service:::backend
+     api_service:::service
+     bot_service:::backend
+     bot_service:::service
+     file_storage_service:::backend
+     file_storage_service:::service
+     postgres:::backend
+     postgres:::datastore
+     minio:::backend
+     minio:::datastore
+     nginx:::backend
+    classDef frontend fill:#E1F5FE,stroke:#0277BD,stroke-width:2px,color:#212121
+    classDef backend fill:#FAFAFA,stroke:#616161,stroke-width:2px,color:#212121
+    classDef service fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#212121
+    classDef datastore fill:#FFFDE7,stroke:#F57F17,stroke-width:2px,color:#212121
+    style user_tg_bot stroke-width:4px,stroke-dasharray: 0
+    style user_mini_app stroke-width:4px,stroke-dasharray: 0
+    style user_web_widget stroke-width:4px,stroke-dasharray: 0
+    style user_admin stroke-width:4px,stroke-dasharray: 0
+    style api_service fill:#00C853,stroke-width:4px,stroke-dasharray: 0
+    style bot_service fill:#00C853,stroke-width:4px,stroke-dasharray: 0
+    style file_storage_service fill:#00C853,stroke-width:4px,stroke-dasharray: 0
+    style postgres stroke-width:4px,stroke-dasharray: 0
+    style minio stroke-width:4px,stroke-dasharray: 0
+    style nginx fill:#C8E6C9,stroke-width:4px,stroke-dasharray: 0
+    style Microservices fill:#C8E6C9,color:#000000,stroke:#00C853
+    style subGraph2 fill:#BBDEFB,stroke:#2962FF
+    style subGraph3 fill:#FFE0B2,color:#000000,stroke:#FF6D00
+    style subGraph0 fill:#E1BEE7,color:#000000,stroke:#AA00FF
+    linkStyle 0 stroke:#000000,fill:none
+    linkStyle 1 stroke:#000000,fill:none
+    linkStyle 2 stroke:#000000,fill:none
+    linkStyle 3 stroke:#000000,fill:none
+    linkStyle 4 stroke:#000000,fill:none
+    linkStyle 5 stroke:#000000,fill:none
+    linkStyle 6 stroke:#000000,fill:none
+    linkStyle 9 stroke:#000000,fill:none
+    linkStyle 10 stroke:#000000,fill:none
+```
+
+
 ## Процесс загрузки файлов(воркфлоу)
 
 Загрузка файла и его привязка к заявке происходит в два этапа, так как за эти операции отвечают разные микросервисы.
