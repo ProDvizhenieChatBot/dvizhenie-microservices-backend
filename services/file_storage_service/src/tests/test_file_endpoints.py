@@ -12,9 +12,6 @@ from httpx import AsyncClient
 from app.core.config import settings
 
 
-# --------------------------
-# File Upload Tests
-# --------------------------
 class TestFileUploadEndpoint:
     @pytest.mark.asyncio
     async def test_upload_file_success(self, test_client: AsyncClient):
@@ -42,16 +39,15 @@ class TestFileUploadEndpoint:
         This exercises the Path(file.filename).suffix == '' branch.
         """
         file_content = b'No extension'
-        file_to_upload = {'file': ('file', io.BytesIO(file_content), 'text/plain')}  # no extension
+        file_to_upload = {'file': ('file', io.BytesIO(file_content), 'text/plain')}
         response = await test_client.post('/api/v1/files/', files=file_to_upload)
         assert response.status_code == 201
         data = response.json()
         assert data['filename'] == 'file'
-        assert data['file_id'].endswith('')  # No extension in file_id
+        assert data['file_id'].endswith('')
 
     @pytest.mark.asyncio
     async def test_upload_file_s3_error(self, test_client: AsyncClient, s3_client):
-        # Simulate an S3 upload failure
         async def fail_upload(*args, **kwargs):
             raise Exception('S3 failure')
 
@@ -64,19 +60,14 @@ class TestFileUploadEndpoint:
         assert 'Failed to upload file to S3' in response.json()['detail']
 
 
-# --------------------------
-# Download Link Tests
-# --------------------------
 class TestDownloadLinkEndpoint:
     @pytest.mark.asyncio
     async def test_get_download_link_success(self, test_client: AsyncClient):
-        # Upload a file first
         file_content = b'Test PDF content'
         file_to_upload = {'file': ('test.pdf', io.BytesIO(file_content), 'application/pdf')}
         upload_resp = await test_client.post('/api/v1/files/', files=file_to_upload)
         file_id = upload_resp.json()['file_id']
 
-        # Generate download link
         response = await test_client.get(f'/api/v1/files/{file_id}/download-link')
         assert response.status_code == 200
         data = response.json()
@@ -93,7 +84,6 @@ class TestDownloadLinkEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_download_link_head_object_error(self, test_client: AsyncClient, s3_client):
-        # Simulate unknown S3 error
         async def head_object_fail(**kwargs):
             raise ClientError({'Error': {'Code': '500', 'Message': 'Internal Error'}}, 'HeadObject')
 

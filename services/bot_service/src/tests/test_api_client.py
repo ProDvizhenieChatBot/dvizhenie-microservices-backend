@@ -26,7 +26,6 @@ async def test_create_telegram_session_success(mock_async_client_cls, api_client
     mock_client = mock_async_client_cls.return_value.__aenter__.return_value
     mock_response = AsyncMock()
     mock_response.raise_for_status = MagicMock()
-    # FIX: .json() is a sync method, so it should be a MagicMock
     mock_response.json = MagicMock(return_value={'application_uuid': 'test-uuid-123'})
     mock_client.post.return_value = mock_response
 
@@ -62,7 +61,6 @@ async def test_get_status_success(mock_async_client_cls, api_client: ApiClient):
     mock_response = AsyncMock()
     mock_response.raise_for_status = MagicMock()
     mock_response.status_code = 200
-    # FIX: .json() is a sync method, so it should be a MagicMock
     mock_response.json = MagicMock(return_value={'status': 'in_progress'})
     mock_client.get.return_value = mock_response
 

@@ -21,16 +21,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=settings.APP_TITLE, lifespan=lifespan)
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=[
-#         # Куки так не будут отправляться :(
-#         '*',
-#     ],
-#     # allow_credentials=True,
-#     allow_methods=['*'],
-#     allow_headers=['*']
-# )
+
 
 app.include_router(files.router, prefix='/api/v1/files', tags=['Files'])
 
