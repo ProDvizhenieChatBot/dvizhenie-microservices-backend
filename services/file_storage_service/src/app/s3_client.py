@@ -33,21 +33,20 @@ async def create_bucket_if_not_exists():
     bucket_name = settings.MINIO_BUCKET_NAME
     logger.info(f'Checking if bucket "{bucket_name}" exists...')
 
-    async for s3 in get_s3_client():
-        try:
-            await s3.head_bucket(Bucket=bucket_name)
-            logger.info(f'Bucket "{bucket_name}" already exists.')
-        except ClientError as e:
-            error_code = e.response.get('Error', {}).get('Code')
-
-            if error_code == '404':
-                logger.info(f'Bucket "{bucket_name}" not found. Creating it...')
-                try:
+    try:
+        async for s3 in get_s3_client():
+            try:
+                await s3.head_bucket(Bucket=bucket_name)
+                logger.info(f'Bucket "{bucket_name}" already exists.')
+            except ClientError as e:
+                error_code = e.response.get('Error', {}).get('Code')
+                if error_code == '404':
+                    logger.info(f'Bucket "{bucket_name}" not found. Creating it...')
                     await s3.create_bucket(Bucket=bucket_name)
                     logger.info(f'Bucket "{bucket_name}" created successfully.')
-                except ClientError as create_error:
-                    logger.error(f'Error creating bucket: {create_error}', exc_info=True)
+                else:
+                    logger.error(f'Unexpected S3 error: {e}', exc_info=True)
                     raise
-            else:
-                logger.error(f'An unexpected S3 error occurred: {e}', exc_info=True)
-                raise
+    except Exception as e:
+        logger.error(f'Failed to check or create bucket: {e}', exc_info=True)
+        raise
