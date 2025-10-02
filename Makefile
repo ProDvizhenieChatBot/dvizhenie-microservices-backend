@@ -24,3 +24,18 @@ image:
 	@cd $(CURRENT_DIR)/services/file_storage_service && \
 	docker buildx build --platform linux/amd64 --no-cache -t ${BACKEND_STORAGE_DOCKER_IMAGE} .
 	@docker push ${BACKEND_STORAGE_DOCKER_IMAGE}
+
+image-api:
+	@cd $(CURRENT_DIR)/services/api_service && \
+	docker buildx build --platform linux/amd64 --no-cache -t ${BACKEND_API_DOCKER_IMAGE} .
+	@docker push ${BACKEND_API_DOCKER_IMAGE}
+
+image-storage:
+	@cd $(CURRENT_DIR)/services/file_storage_service && \
+	docker buildx build --platform linux/amd64 --no-cache -t ${BACKEND_STORAGE_DOCKER_IMAGE} .
+	@docker push ${BACKEND_STORAGE_DOCKER_IMAGE}
+
+image-bot:
+	@cd $(CURRENT_DIR)/services/bot_service && \
+	docker buildx build --platform linux/amd64 --no-cache -t ${BACKEND_BOT_DOCKER_IMAGE} .
+	@docker push ${BACKEND_BOT_DOCKER_IMAGE}
