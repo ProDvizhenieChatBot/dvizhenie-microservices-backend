@@ -10,6 +10,7 @@ This module provides shared fixtures for testing, including:
 import uuid
 from collections.abc import AsyncGenerator
 from datetime import datetime
+from typing import cast
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -19,14 +20,10 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.db import Base, get_async_session
 from app.main import app
-
-# This import is essential for SQLAlchemy's declarative base to discover the models.
-# Ruff will flag it as unused, so we must explicitly ignore it.
 from app.models import db_models  # noqa: F401
 from app.models.db_models import Application, ApplicationFile, FormSchema
 
 
-# Use in-memory SQLite for fast tests
 TEST_DATABASE_URL = 'sqlite+aiosqlite:///:memory:'
 
 test_engine = create_async_engine(
@@ -63,7 +60,7 @@ async def db_session(setup_database: None) -> AsyncGenerator[AsyncSession, None]
 async def test_client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """Provides an async HTTP client for testing API endpoints."""
 
-    async def override_get_db():
+    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield db_session
 
     app.dependency_overrides[get_async_session] = override_get_db
@@ -100,17 +97,19 @@ def sample_form_schema() -> dict:
 
 
 @pytest.fixture
-async def active_form_schema(db_session: AsyncSession, sample_form_schema: dict) -> FormSchema:
+async def active_form_schema(
+    db_session: AsyncSession, sample_form_schema: dict
+) -> AsyncGenerator[FormSchema, None]:
     """Creates and returns an active form schema in the database."""
     schema = FormSchema(version='1.0', schema_data=sample_form_schema, is_active=True)
     db_session.add(schema)
     await db_session.commit()
     await db_session.refresh(schema)
-    return schema
+    return cast(FormSchema, schema)
 
 
 @pytest.fixture
-async def draft_application(db_session: AsyncSession) -> Application:
+async def draft_application(db_session: AsyncSession) -> AsyncGenerator[Application, None]:
     """Creates and returns a draft application."""
     app_data = Application(
         id=uuid.uuid4(),
@@ -123,11 +122,11 @@ async def draft_application(db_session: AsyncSession) -> Application:
     db_session.add(app_data)
     await db_session.commit()
     await db_session.refresh(app_data)
-    return app_data
+    return cast(Application, app_data)
 
 
 @pytest.fixture
-async def submitted_application(db_session: AsyncSession) -> Application:
+async def submitted_application(db_session: AsyncSession) -> AsyncGenerator[Application, None]:
     """Creates and returns a submitted application."""
     app_data = Application(
         id=uuid.uuid4(),
@@ -140,13 +139,13 @@ async def submitted_application(db_session: AsyncSession) -> Application:
     db_session.add(app_data)
     await db_session.commit()
     await db_session.refresh(app_data)
-    return app_data
+    return cast(Application, app_data)
 
 
 @pytest.fixture
 async def application_with_files(
     db_session: AsyncSession, draft_application: Application
-) -> Application:
+) -> AsyncGenerator[Application, None]:
     """Creates an application with linked files."""
     file1 = ApplicationFile(
         application_id=draft_application.id,
@@ -164,4 +163,4 @@ async def application_with_files(
     db_session.add_all([file1, file2])
     await db_session.commit()
     await db_session.refresh(draft_application)
-    return draft_application
+    return cast(Application, draft_application)

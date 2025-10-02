@@ -6,11 +6,12 @@ using an in-memory SQLite database.
 """
 
 import uuid
+from typing import cast
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.db_models import Application
+from app.models.db_models import Application, FormSchema
 from app.repositories.applications import ApplicationRepository
 from app.repositories.forms import FormSchemaRepository
 from app.schemas.applications import (
@@ -37,6 +38,7 @@ class TestApplicationRepository:
         result = await repo.get_by_uuid(draft_application.id)
 
         assert result is not None
+        assert isinstance(result, Application)
         assert result.id == draft_application.id
         assert result.status == 'draft'
 
@@ -50,10 +52,12 @@ class TestApplicationRepository:
     ):
         """Test retrieving an application with its related files."""
         result = await repo.get_by_uuid(application_with_files.id, with_files=True)
-
         assert result is not None
-        assert len(result.files) == 2
-        assert result.files[0].file_id in ['file1.pdf', 'file2.jpg']
+        app_with_files = cast(Application, result)
+
+        assert isinstance(app_with_files, Application)
+        assert len(app_with_files.files) == 2
+        assert app_with_files.files[0].file_id in ['file1.pdf', 'file2.jpg']
 
     async def test_get_draft_by_telegram_id_existing(
         self, repo: ApplicationRepository, draft_application: Application
@@ -62,6 +66,7 @@ class TestApplicationRepository:
         result = await repo.get_draft_by_telegram_id(draft_application.telegram_id)
 
         assert result is not None
+        assert isinstance(result, Application)
         assert result.id == draft_application.id
         assert result.status == ApplicationStatus.DRAFT.value
 
@@ -84,6 +89,7 @@ class TestApplicationRepository:
         result = await repo.get_latest_by_telegram_id(draft_application.telegram_id)
 
         assert result is not None
+        assert isinstance(result, Application)
         assert result.id == draft_application.id
 
     async def test_get_all_no_filter(
@@ -192,8 +198,11 @@ class TestApplicationRepository:
         await repo.link_file(draft_application.id, file_link)
 
         # Verify the file was linked
-        app_with_files = await repo.get_by_uuid(draft_application.id, with_files=True)
-        assert app_with_files is not None
+        result = await repo.get_by_uuid(draft_application.id, with_files=True)
+        assert result is not None
+        app_with_files = cast(Application, result)
+
+        assert isinstance(app_with_files, Application)
         assert len(app_with_files.files) == 1
         assert app_with_files.files[0].file_id == 'test-file.pdf'
 
@@ -211,8 +220,11 @@ class TestFormSchemaRepository:
         result = await repo.get_active_schema()
 
         assert result is not None
-        assert result.is_active is True
-        assert result.version == '1.0'
+        schema = cast(FormSchema, result)
+
+        assert isinstance(schema, FormSchema)
+        assert schema.is_active is True
+        assert schema.version == '1.0'
 
     async def test_get_active_schema_none(self, repo: FormSchemaRepository):
         """Test retrieving active schema when none exists."""
@@ -240,7 +252,10 @@ class TestFormSchemaRepository:
         new_schema = await repo.create_and_set_active_schema(new_schema_upload)
 
         # Verify old schema is deactivated
-        old_schema = await repo.get_active_schema()
-        assert old_schema is not None
+        result = await repo.get_active_schema()
+        assert result is not None
+        old_schema = cast(FormSchema, result)
+
+        assert isinstance(old_schema, FormSchema)
         assert old_schema.id == new_schema.id
         assert old_schema.version == '2.0'
