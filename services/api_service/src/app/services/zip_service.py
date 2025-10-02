@@ -34,7 +34,7 @@ async def create_documents_zip_archive(app: Application, settings: Settings) -> 
                     )
                     link_response = await client.get(link_url)
                     link_response.raise_for_status()
-                    public_download_url = link_response.json()['download_url']
+                    public_download_url = (await link_response.json())['download_url']
 
                     internal_download_url = public_download_url.replace(
                         settings.S3_PUBLIC_URL, settings.S3_ENDPOINT_URL
