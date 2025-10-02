@@ -104,20 +104,13 @@ reportCallIssue = false
 reportArgumentType = "none"
 reportGeneralTypeIssues = "none"
 
-# [tool.pytest.ini_options]
-# pythonpath = ["src"]
-# asyncio_mode = "auto"
-# filterwarnings = [
-#     "ignore:Please use `import python_multipart` instead.:PendingDeprecationWarning"
-# ]
-
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["src/tests"]
 asyncio_mode = "auto"
 addopts = [
-    "--verbose",
+    # "--verbose",
     "--strict-markers",
     "--tb=short",
     "--cov=app",
@@ -136,4 +129,4 @@ markers = [
     "slow: Tests that take a long time to run",
 ]
 log_cli = true
-log_cli_level = "INFO"
+log_cli_level = "CRITICAL"
