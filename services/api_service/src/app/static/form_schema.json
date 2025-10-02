@@ -1,428 +1,261 @@
 {
-  "name": "Анкета Подопечного Фонда 'Движение Жизни'",
-  "version": "2.0",
-  "start_step_id": "consent",
+  "start": "consent",
   "steps": [
     {
-      "step_id": "consent",
-      "title": "Добро пожаловать!",
-      "fields": [
-        {
-          "field_id": "greeting",
-          "type": "info",
-          "text": "Здравствуйте! Это сервис фонда «Движение Жизни». Заполнение анкеты займет около 15-20 минут. Чтобы продолжить, необходимо дать согласие на обработку персональных данных (152-ФЗ)."
-        },
-        {
-          "field_id": "consent_agreement",
-          "type": "single_choice_buttons",
-          "label": "Я даю согласие на обработку персональных данных.",
-          "required": true,
-          "options": ["✅ Согласен", "❌ Отказываюсь"]
-        }
-      ],
-      "navigation": {
-        "type": "conditional",
-        "source_field_id": "consent_agreement",
-        "rules": [
-          { "value": "❌ Отказываюсь", "next_step_id": "terminate_no_consent" }
-        ],
-        "default_next_step_id": "applicant_role"
+      "id": "consent",
+      "text": "Привет!👋 Я бот, созданный для того, чтобы рассказать о вашей потребности фонду.\nПодтвердите согласие на обработку персональных данных:",
+      "type": "buttons",
+      "options": ["Отклоняю", "Подтверждаю"],
+      "next": {
+        "Отклоняю": "decline",
+        "Подтверждаю": "info_start"
       }
     },
     {
-      "step_id": "terminate_no_consent",
-      "type": "terminate",
-      "title": "Завершение",
-      "text": "К сожалению, без согласия на обработку данных мы не можем продолжить. Если у вас есть вопросы, пожалуйста, свяжитесь с нами: 📧 info@dvizhenie.life"
+      "id": "decline",
+      "text": "К сожалению, без согласия мы не можем продолжить 😔\nСвяжитесь с нами: info@dvizhenie.life",
+      "type": "message"
     },
     {
-      "step_id": "applicant_role",
-      "title": "Статус заявителя",
-      "fields": [
-        {
-          "field_id": "applicant_role",
-          "type": "single_choice_buttons",
-          "label": "Кто заполняет заявку?",
-          "required": true,
-          "options": [
-            "Я и есть подопечный",
-            "Мать/отец",
-            "Опекун",
-            "Родственник"
-          ]
-        }
-      ],
-      "navigation": {
-        "type": "direct",
-        "next_step_id": "main_data"
+      "id": "info_start",
+      "text": "Спасибо! Анкета состоит из шести шагов и сохраняется после каждого ответа. В любой момент можно остановиться и вернуться позже.",
+      "type": "buttons",
+      "options": ["Продолжить"],
+      "next": {
+        "Продолжить": "who_fills"
       }
     },
     {
-      "step_id": "main_data",
-      "title": "Основные данные",
-      "fields": [
-        {
-          "field_id": "contact_person_name",
-          "type": "text",
-          "label": "ФИО контактного лица (заполняющего анкету)",
-          "required": true,
-          "condition": {
-            "field_id": "applicant_role",
-            "operator": "not_equals",
-            "value": "Я и есть подопечный"
-          }
-        },
-        {
-          "field_id": "beneficiary_name",
-          "type": "text",
-          "label": "ФИО подопечного",
-          "required": true
-        },
-        {
-          "field_id": "beneficiary_dob",
-          "type": "date",
-          "label": "Дата рождения подопечного",
-          "required": true,
-          "validation": { "maxDate": "today" }
-        },
-        {
-          "field_id": "city",
-          "type": "text",
-          "label": "Город проживания",
-          "required": true
-        },
-        {
-          "field_id": "phone",
-          "type": "phone",
-          "label": "Контактный телефон",
-          "required": true,
-          "validation": { "mask": "+7 (___) ___-__-__" }
-        },
-        {
-          "field_id": "email",
-          "type": "email",
-          "label": "Email",
-          "required": true
-        },
-        {
-          "field_id": "assistance_needed",
-          "type": "single_choice_buttons",
-          "label": "Что нужно приобрести?",
-          "required": true,
-          "options": ["Коляска (ТСР)", "Приставка", "Комплектующие"]
-        },
-        {
-          "field_id": "has_tsr_certificate",
-          "type": "single_choice_buttons",
-          "label": "Есть ли сертификат на ТСР?",
-          "required": true,
-          "options": ["Да", "Нет"]
-        },
-        {
-          "field_id": "tsr_certificate_details",
-          "type": "textarea",
-          "label": "Укажите номер, сумму и срок действия сертификата",
-          "required": true,
-          "condition": {
-            "field_id": "has_tsr_certificate",
-            "operator": "equals",
-            "value": "Да"
-          }
-        },
-        {
-          "field_id": "has_other_fundraisings",
-          "type": "single_choice_buttons",
-          "label": "Есть ли открытые сборы в других фондах?",
-          "required": true,
-          "options": ["Да", "Нет"]
-        },
-        {
-          "field_id": "other_fundraisings_details",
-          "type": "textarea",
-          "label": "Укажите название фонда, цель сбора и приложите ссылку",
-          "required": true,
-          "condition": {
-            "field_id": "has_other_fundraisings",
-            "operator": "equals",
-            "value": "Да"
-          }
-        },
-        {
-          "field_id": "consultation_needed",
-          "type": "multiple_choice_checkbox",
-          "label": "Нужна ли консультационная помощь?",
-          "options": ["Да, по ИПРА", "Да, по МСЭ", "Да, по СФР", "Нет"]
-        },
-        {
-          "field_id": "can_promote",
-          "type": "single_choice_buttons",
-          "label": "Есть ли возможность продвигать сбор самостоятельно?",
-          "required": true,
-          "options": ["Да", "Нет"]
-        },
-        {
-          "field_id": "promotion_links",
-          "type": "textarea",
-          "label": "Укажите ссылки на соцсети/медиа для продвижения",
-          "required": true,
-          "condition": {
-            "field_id": "can_promote",
-            "operator": "equals",
-            "value": "Да"
-          }
-        }
-      ],
-      "navigation": {
-        "type": "conditional",
-        "source_field_id": "applicant_role",
-        "rules": [
-          { "value": "Мать/отец", "next_step_id": "history_child" },
-          { "value": "Опекун", "next_step_id": "history_child" }
-        ],
-        "default_next_step_id": "history_adult"
+      "id": "who_fills",
+      "text": "Кто заполняет заявку?",
+      "type": "buttons",
+      "options": ["Родственник", "Опекун", "Родитель", "Я — подопечный"],
+      "next": {
+        "Я — подопечный": "name_ward",
+        "default": "name_not_ward"
       }
     },
     {
-      "step_id": "history_adult",
-      "title": "История подопечного",
-      "fields": [
-        {
-          "field_id": "diagnosis",
-          "type": "textarea",
-          "label": "Укажите диагноз",
-          "required": true
-        },
-        {
-          "field_id": "health_description",
-          "type": "textarea",
-          "label": "Опишите текущее состояние здоровья и ограничения",
-          "required": true
-        },
-        {
-          "field_id": "diagnosis_date",
-          "type": "textarea",
-          "label": "Когда был поставлен диагноз?",
-          "required": true
-        },
-        {
-          "field_id": "tsr_in_ipra",
-          "type": "single_choice_buttons",
-          "label": "Прописано ли ТСР в медзаключении или ИПРА?",
-          "options": ["Да", "Нет"],
-          "required": true
-        },
-        {
-          "field_id": "urgency_details",
-          "type": "textarea",
-          "label": "Есть ли сроки, к которым особенно важно получить помощь?"
-        },
-        {
-          "field_id": "family_description",
-          "type": "textarea",
-          "label": "Расскажите о семье или близких, кто рядом и поддерживает",
-          "required": true
-        },
-        {
-          "field_id": "hobby_description",
-          "type": "textarea",
-          "label": "Чем увлекаетесь? Есть ли любимое хобби?",
-          "required": true
-        },
-        {
-          "field_id": "achievements_description",
-          "type": "textarea",
-          "label": "Какие успехи или достижения особенно дороги?"
-        },
-        {
-          "field_id": "why_needed",
-          "type": "textarea",
-          "label": "Почему нужна новая коляска/приставка/комплектующее?",
-          "required": true
-        },
-        {
-          "field_id": "message_to_sponsors",
-          "type": "textarea",
-          "label": "Что бы вы хотели сказать людям, которые прочитают вашу историю?",
-          "required": true
-        },
-        {
-          "field_id": "can_record_video",
-          "type": "single_choice_buttons",
-          "label": "Готовы ли записать короткое видео о своей жизни?",
-          "options": ["Да", "Нет"],
-          "required": true
-        },
-        {
-          "field_id": "additional_info",
-          "type": "textarea",
-          "label": "Хотите добавить что-то от себя?"
-        }
-      ],
-      "navigation": { "type": "direct", "next_step_id": "documents" }
+      "id": "name_not_ward",
+      "text": "Шаг 1/6 — Введите ФИО подопечного",
+      "type": "input",
+      "showIf": "answers.who_fills != 'Я — подопечный'",
+      "next": "dob"
     },
     {
-      "step_id": "history_child",
-      "title": "История ребенка",
-      "fields": [
-        {
-          "field_id": "child_diagnosis",
-          "type": "textarea",
-          "label": "Укажите диагноз ребенка",
-          "required": true
-        },
-        {
-          "field_id": "child_health_description",
-          "type": "textarea",
-          "label": "Опишите текущее состояние здоровья и ограничения",
-          "required": true
-        },
-        {
-          "field_id": "child_diagnosis_date",
-          "type": "textarea",
-          "label": "Когда был поставлен диагноз?",
-          "required": true
-        },
-        {
-          "field_id": "child_tsr_in_ipra",
-          "type": "single_choice_buttons",
-          "label": "Прописано ли ТСР в медзаключении или ИПРА?",
-          "options": ["Да", "Нет"],
-          "required": true
-        },
-        {
-          "field_id": "child_urgency_details",
-          "type": "textarea",
-          "label": "Есть ли сроки, к которым важно получить помощь (например, реабилитация, учеба)?"
-        },
-        {
-          "field_id": "child_family_description",
-          "type": "textarea",
-          "label": "Расскажите о семье: кто входит, чем занимаются родители/опекуны",
-          "required": true
-        },
-        {
-          "field_id": "child_hobby_description",
-          "type": "textarea",
-          "label": "Чем увлекается ребенок, какие хобби или интересы?",
-          "required": true
-        },
-        {
-          "field_id": "child_dream",
-          "type": "textarea",
-          "label": "Какая мечта у ребенка?",
-          "required": true
-        },
-        {
-          "field_id": "child_why_needed",
-          "type": "textarea",
-          "label": "Почему нужна коляска/приставка/комплектующие?",
-          "required": true
-        },
-        {
-          "field_id": "child_message_to_sponsors",
-          "type": "textarea",
-          "label": "Что бы вы хотели сказать людям, которые прочитают историю вашего ребенка?",
-          "required": true
-        },
-        {
-          "field_id": "child_can_record_video",
-          "type": "single_choice_buttons",
-          "label": "Готовы ли записать короткое видео о повседневной жизни ребенка?",
-          "options": ["Да", "Нет"],
-          "required": true
-        },
-        {
-          "field_id": "child_additional_info",
-          "type": "textarea",
-          "label": "Хотите добавить что-то от себя?"
-        }
-      ],
-      "navigation": { "type": "direct", "next_step_id": "documents" }
+      "id": "name_ward",
+      "text": "Шаг 1/6 — Пожалуйста, представьтесь в формате ФИО",
+      "type": "input",
+      "showIf": "answers.who_fills == 'Я — подопечный'",
+      "next": "dob"
     },
     {
-      "step_id": "documents",
-      "title": "Загрузка документов",
-      "fields": [
-        {
-          "field_id": "gosuslugi_confirmed",
-          "type": "single_choice_buttons",
-          "label": "Подтверждена ли запись на Госуслугах?",
-          "options": ["Да", "Нет"],
-          "required": true
-        },
-        {
-          "field_id": "birth_certificate_scan",
-          "type": "file",
-          "label": "Копия свидетельства о рождении",
-          "required": true,
-          "condition": {
-            "field_id": "applicant_role",
-            "operator": "in",
-            "value": ["Мать/отец", "Опекун"]
-          }
-        },
-        {
-          "field_id": "guardian_passport_scan",
-          "type": "file",
-          "label": "Паспорт родителя/опекуна (1-я страница + прописка)",
-          "required": true,
-          "condition": {
-            "field_id": "applicant_role",
-            "operator": "in",
-            "value": ["Мать/отец", "Опекун"]
-          }
-        },
-        {
-          "field_id": "beneficiary_passport_scan",
-          "type": "file",
-          "label": "Паспорт подопечного (1-я страница + прописка)",
-          "required": true,
-          "condition": {
-            "field_id": "applicant_role",
-            "operator": "not_in",
-            "value": ["Мать/отец", "Опекун"]
-          }
-        },
-        {
-          "field_id": "ipra_scan",
-          "type": "file",
-          "label": "Копия ИПРА (все страницы)",
-          "required": true
-        },
-        {
-          "field_id": "medical_report_scan",
-          "type": "file",
-          "label": "Медицинское заключение/выписка",
-          "required": true
-        },
-        {
-          "field_id": "disability_certificate_scan",
-          "type": "file",
-          "label": "Справка об инвалидности (обе стороны)",
-          "required": true
-        },
-        {
-          "field_id": "snils_scan",
-          "type": "file",
-          "label": "СНИЛС",
-          "required": true
-        },
-        {
-          "field_id": "beneficiary_photos",
-          "type": "file",
-          "label": "Несколько качественных фотографий подопечного",
-          "required": true,
-          "allow_multiple": true
-        }
-      ],
-      "navigation": { "type": "direct", "next_step_id": "summary" }
+      "id": "dob",
+      "text": "Введите дату рождения",
+      "type": "date",
+      "next": "city"
     },
     {
-      "step_id": "summary",
-      "type": "summary",
-      "title": "Просмотр и отправка",
-      "text": "Спасибо! ✅ Ваша анкета заполнена. Пожалуйста, просмотрите её и подтвердите отправку.",
-      "navigation": { "type": "submit" }
+      "id": "city",
+      "text": "Введите город проживания",
+      "type": "input",
+      "next": "phone"
+    },
+    {
+      "id": "phone",
+      "text": "Введите номер телефона для связи",
+      "type": "phone",
+      "next": "email"
+    },
+    {
+      "id": "email",
+      "text": "Введите электронную почту",
+      "type": "email",
+      "next": "need_item"
+    },
+    {
+      "id": "need_item",
+      "text": "Шаг 2/6 — Что нужно приобрести?",
+      "type": "buttons",
+      "options": ["Коляску", "Приставку", "Комплектующие"],
+      "next": "has_certificate"
+    },
+    {
+      "id": "has_certificate",
+      "text": "Шаг 3/6 — Есть ли сертификат на технические средства реабилитации?",
+      "type": "buttons",
+      "options": ["Да", "Нет"],
+      "next": {
+        "Да": "certificate_info",
+        "Нет": "other_funds"
+      }
+    },
+    {
+      "id": "certificate_info",
+      "text": "Введите номер и срок действия сертификата через запятую",
+      "type": "input",
+      "showIf": "answers.has_certificate == 'Да'",
+      "next": "other_funds"
+    },
+    {
+      "id": "other_funds",
+      "text": "Шаг 4/6 — Есть ли открытые сборы в других фондах?",
+      "type": "buttons",
+      "options": ["Да", "Нет"],
+      "next": {
+        "Да": "other_fund_link",
+        "Нет": "consult_help"
+      }
+    },
+    {
+      "id": "other_fund_link",
+      "text": "Пришлите ссылку на сбор",
+      "type": "link",
+      "showIf": "answers.other_funds == 'Да'",
+      "next": "consult_help"
+    },
+    {
+      "id": "consult_help",
+      "text": "Нужна ли консультационная помощь?",
+      "type": "buttons",
+      "options": ["по ИПРА", "по МСЭ", "по СФР", "Не нужна"],
+      "next": "can_promote"
+    },
+    {
+      "id": "can_promote",
+      "text": "Есть ли способность самостоятельно продвигать сбор?",
+      "type": "buttons",
+      "options": ["Да", "Нет"],
+      "next": {
+        "Да": "social_links",
+        "Нет": "diagnosis_child"
+      }
+    },
+    {
+      "id": "social_links",
+      "text": "Пришлите ссылку(и) на соц.сети",
+      "type": "link",
+      "showIf": "answers.can_promote == 'Да'",
+      "next": "diagnosis_child"
+    },
+    {
+      "id": "diagnosis_child",
+      "text": "Шаг 5/6 — Какой диагноз у ребенка?",
+      "type": "input",
+      "showIf": "answers.who_fills == 'Я — подопечный'",
+      "next": "health_state"
+    },
+    {
+      "id": "diagnosis_self",
+      "text": "Шаг 5/6 — Какой у вас диагноз?",
+      "type": "input",
+      "showIf": "answers.who_fills != 'Я — подопечный'",
+      "next": "health_state"
+    },
+    {
+      "id": "health_state",
+      "text": "Опишите текущее состояние здоровья и ограничения",
+      "type": "input",
+      "next": "diagnosis_date"
+    },
+    {
+      "id": "diagnosis_date",
+      "text": "Когда был поставлен диагноз?",
+      "type": "date",
+      "next": "tsr_in_ipra"
+    },
+    {
+      "id": "tsr_in_ipra",
+      "text": "Прописано ли ТСР в медзаключении или ИПРА?",
+      "type": "buttons",
+      "options": ["Да", "Нет"],
+      "next": "important_deadlines"
+    },
+    {
+      "id": "important_deadlines",
+      "text": "Есть ли сроки, к которым особенно важно получить помощь?",
+      "type": "input",
+      "next": "family_support"
+    },
+    {
+      "id": "family_support",
+      "text": "Расскажите о семье или близких, кто рядом и поддерживает",
+      "type": "input",
+      "next": "who_inspires"
+    },
+    {
+      "id": "who_inspires",
+      "text": "Кто вас вдохновляет или поддерживает?",
+      "type": "input",
+      "next": "hobbies"
+    },
+    {
+      "id": "hobbies",
+      "text": "Чем увлекаетесь? Есть ли любимое хобби?",
+      "type": "input",
+      "next": "achievements"
+    },
+    {
+      "id": "achievements",
+      "text": "Какие успехи или достижения особенно дороги?",
+      "type": "input",
+      "next": "why_needed"
+    },
+    {
+      "id": "why_needed",
+      "text": "Почему нужна новая коляска/приставка/комплектующее?",
+      "type": "input",
+      "next": "message_for_readers"
+    },
+    {
+      "id": "message_for_readers",
+      "text": "Что бы вы хотели сказать людям, которые прочитают вашу историю?",
+      "type": "input",
+      "next": "will_record_video"
+    },
+    {
+      "id": "will_record_video",
+      "text": "Готовы ли записать короткое видео о своей жизни?",
+      "type": "buttons",
+      "options": ["Да", "Нет"],
+      "next": {
+        "Да": "video_link",
+        "Нет": "extra_comments"
+      }
+    },
+    {
+      "id": "video_link",
+      "text": "Пришлите ссылку на видео или загрузите файл",
+      "type": "link",
+      "showIf": "answers.will_record_video == 'Да'",
+      "next": "extra_comments"
+    },
+    {
+      "id": "extra_comments",
+      "text": "Хотите добавить что-то от себя?",
+      "type": "input",
+      "next": "review"
+    },
+    {
+      "id": "review",
+      "text": "Вы почти закончили. Хотите просмотреть ответы перед отправкой?",
+      "type": "buttons",
+      "options": ["Просмотреть ответы", "Отправить заявку"],
+      "next": {
+        "Просмотреть ответы": "show_answers",
+        "Отправить заявку": "submit"
+      }
+    },
+    {
+      "id": "show_answers",
+      "text": "Здесь показаны все ваши ответы (реализация показа в движке). После редактирования вернитесь на шаг отправки.",
+      "type": "message",
+      "next": "submit"
+    },
+    {
+      "id": "submit",
+      "text": "Ваша заявка отправлена. Наши сотрудники свяжутся с вами в ближайшее время. Спасибо!",
+      "type": "message"
     }
   ]
 }
