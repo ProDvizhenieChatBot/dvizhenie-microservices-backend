@@ -2,8 +2,8 @@
 
 Этот проект представляет собой бэкенд-систему, реализованную на микросервисной архитектуре, для автоматизации сбора заявок от подопечных через виджет на сайте и чат-бота в Telegram.
 
-Комманда:
-Королев Владимир https://github.com/VOVSn
+Команда:
+Королев Владимир https://github.com/VOVSn [lead python backend]
 
 ## Оглавление
 
@@ -29,18 +29,17 @@
 *   **Оркестрация:** Docker, Docker Compose
 *   **Веб-сервер/API Gateway:** Nginx
 *   **Инструменты разработки:** Ruff, Pyright, Pre-commit, UV
-*   **Тестирование и визуализация:** Postman, DBeaver, Pytest
+*   **Тестирование и визуализация:** Postman, DBeaver, Pytest, coverage.py
 
 ## Документация API (Swagger/ReDoc)
 
-*   **Динамическая документация `api-service`:**
+*   **Динамическая автодокументация `api-service`:**
     *   Swagger UI: `http://localhost:8000/docs`
     *   ReDoc: `http://localhost:8000/redoc`
 
-*   **Динамическая документация `file-storage-service`:**
+*   **Динамическая автодокументация `file-storage-service`:**
     *   Swagger UI: `http://localhost:8002/docs`
     *   ReDoc: `http://localhost:8002/redoc`
-    *   *Примечание: Этот порт открыт для удобства разработки.*
 
 ## Требования
 
@@ -132,6 +131,8 @@
 ### Тестирование
 
 ### Автоматическое тестирование
+(Покрыто более 70% [coverage.py v7.10.7])
+
 
 Проект включает наборы автоматических тестов для всех сервисов (`api-service`, `bot-service`, `file-storage-service`) с использованием `pytest` для обеспечения стабильности и предотвращения регрессий.
 
