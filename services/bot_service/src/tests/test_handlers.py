@@ -1,6 +1,7 @@
 """
 Unit tests for the bot command handlers.
 """
+
 from unittest.mock import AsyncMock, patch
 
 import pytest

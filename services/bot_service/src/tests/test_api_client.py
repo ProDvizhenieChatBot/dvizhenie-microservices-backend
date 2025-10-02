@@ -1,6 +1,7 @@
 """
 Unit tests for the ApiClient.
 """
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest

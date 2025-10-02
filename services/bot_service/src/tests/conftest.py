@@ -1,6 +1,7 @@
 """
 Pytest configuration and fixtures for Bot Service tests.
 """
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
