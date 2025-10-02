@@ -20,19 +20,20 @@ class FormSchemaRepository:
 
     async def create_and_set_active_schema(self, schema_upload: FormSchemaUpload) -> FormSchema:
         """
-        Creates a new schema, sets it as active, and deactivates all others
-        in a single transaction.
+        Creates a new schema, sets it as active, and deactivates all others.
+        This method assumes it's operating within an existing transaction.
         """
-        async with self.session.begin():
-            await self.session.execute(update(FormSchema).values(is_active=False))
+        await self.session.execute(update(FormSchema).values(is_active=False))
 
-            new_schema = FormSchema(
-                version=schema_upload.version,
-                schema_data=schema_upload.schema_data,
-                is_active=True,
-            )
-            self.session.add(new_schema)
-            await self.session.flush()
-            await self.session.refresh(new_schema)
+        new_schema = FormSchema(
+            version=schema_upload.version,
+            schema_data=schema_upload.schema_data,
+            is_active=True,
+        )
+        self.session.add(new_schema)
+
+        await self.session.flush()
+
+        await self.session.refresh(new_schema)
 
         return new_schema
