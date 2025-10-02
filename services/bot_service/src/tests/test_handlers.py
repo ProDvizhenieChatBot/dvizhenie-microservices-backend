@@ -23,7 +23,6 @@ async def test_start_handler(mock_message):
     await start_handler(mock_message)
 
     mock_message.answer.assert_awaited_once()
-    # Check that the message contains key phrases
     call_args = mock_message.answer.call_args[0][0]
     assert 'Здравствуйте!' in call_args
     assert '/form' in call_args

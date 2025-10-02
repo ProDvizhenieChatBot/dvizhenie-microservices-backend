@@ -13,7 +13,6 @@ from app.s3_client import create_bucket_if_not_exists, get_s3_client
 
 @pytest.mark.asyncio
 async def test_get_s3_client_async_generator():
-    # Consume the async generator correctly
     async for client in get_s3_client():
         assert client is not None
 
@@ -22,7 +21,6 @@ async def test_get_s3_client_async_generator():
 async def test_create_bucket_if_not_exists_existing_bucket(monkeypatch):
     mock_client = AsyncMock()
 
-    # head_bucket succeeds (bucket exists)
     async def fake_get_client():
         yield mock_client
 
@@ -36,7 +34,6 @@ async def test_create_bucket_if_not_exists_existing_bucket(monkeypatch):
 async def test_create_bucket_if_not_exists_bucket_missing(monkeypatch):
     mock_client = AsyncMock()
 
-    # head_bucket raises 404
     async def head_bucket(Bucket):
         raise ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, 'HeadBucket')
 
@@ -55,7 +52,6 @@ async def test_create_bucket_if_not_exists_bucket_missing(monkeypatch):
 async def test_create_bucket_if_not_exists_unexpected_error(monkeypatch):
     mock_client = AsyncMock()
 
-    # head_bucket raises unknown error
     async def head_bucket(Bucket):
         raise ClientError({'Error': {'Code': '500', 'Message': 'Internal Error'}}, 'HeadBucket')
 
