@@ -147,6 +147,12 @@
     ```bash
     uv run pytest --cov=app
     ```
+    
+    > **Примечание: Альтернативный способ запуска**
+    > Вы также можете использовать команду `uv run --with ".[dev]" pytest`.
+    >
+    > - `uv run pytest` предполагает, что вы уже выполнили `uv sync` и все зависимости установлены.
+    > - `uv run --with ".[dev]" pytest` является самодостаточной. Она автоматически установит `dev`-зависимости, если их нет в окружении, перед запуском тестов. Этот подход используется в CI/CD и pre-commit хуках для гарантии того, что нужные инструменты всегда доступны.
 
 #### Категории тестов
 
@@ -174,12 +180,11 @@
 Для запуска тестов в CI/CD пайплайнах (например, GitHub Actions) можно использовать следующую конфигурацию:
 
 ```yaml
-# Пример шага в workflow для GitHub Actions
 - name: Run api-service tests
   run: |
     cd services/api_service
-    uv sync
-    uv run pytest --cov=app --cov-report=xml
+    # Мы используем --with, чтобы не требовался отдельный шаг установки
+    uv run --with ".[dev]" pytest --cov=app --cov-report=xml
 
 - name: Upload coverage to Codecov
   uses: codecov/codecov-action@v4
