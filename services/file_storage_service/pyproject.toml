@@ -69,6 +69,7 @@ select = [
 ignore = [
     "RUF001",
     "B008",
+    "N803"
 ]
 fixable = ["ALL"]
 unfixable = []
@@ -113,4 +114,7 @@ addopts = [
 ]
 env_files = [
     "../../.env"
+]
+filterwarnings = [
+    "ignore:Please use `import python_multipart`:PendingDeprecationWarning"
 ]

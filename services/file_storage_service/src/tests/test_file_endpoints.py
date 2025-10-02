@@ -2,6 +2,7 @@
 Integration tests for the File Storage Service API endpoints.
 Includes edge cases and error scenarios to improve coverage.
 """
+
 import io
 
 import pytest
@@ -15,7 +16,6 @@ from app.core.config import settings
 # File Upload Tests
 # --------------------------
 class TestFileUploadEndpoint:
-
     @pytest.mark.asyncio
     async def test_upload_file_success(self, test_client: AsyncClient):
         file_content = b'This is a test file.'
@@ -53,21 +53,21 @@ class TestFileUploadEndpoint:
     async def test_upload_file_s3_error(self, test_client: AsyncClient, s3_client):
         # Simulate an S3 upload failure
         async def fail_upload(*args, **kwargs):
-            raise Exception("S3 failure")
+            raise Exception('S3 failure')
+
         s3_client.upload_fileobj.side_effect = fail_upload
 
         file_content = b'Fail upload'
         file_to_upload = {'file': ('fail.txt', io.BytesIO(file_content), 'text/plain')}
         response = await test_client.post('/api/v1/files/', files=file_to_upload)
         assert response.status_code == 500
-        assert "Failed to upload file to S3" in response.json()['detail']
+        assert 'Failed to upload file to S3' in response.json()['detail']
 
 
 # --------------------------
 # Download Link Tests
 # --------------------------
 class TestDownloadLinkEndpoint:
-
     @pytest.mark.asyncio
     async def test_get_download_link_success(self, test_client: AsyncClient):
         # Upload a file first
@@ -95,10 +95,11 @@ class TestDownloadLinkEndpoint:
     async def test_get_download_link_head_object_error(self, test_client: AsyncClient, s3_client):
         # Simulate unknown S3 error
         async def head_object_fail(**kwargs):
-            raise ClientError({"Error": {"Code": "500", "Message": "Internal Error"}}, "HeadObject")
+            raise ClientError({'Error': {'Code': '500', 'Message': 'Internal Error'}}, 'HeadObject')
+
         s3_client.head_object.side_effect = head_object_fail
 
-        file_id = "testfile.txt"
+        file_id = 'testfile.txt'
         response = await test_client.get(f'/api/v1/files/{file_id}/download-link')
         assert response.status_code == 500
-        assert "An S3 error occurred" in response.json()['detail']
+        assert 'An S3 error occurred' in response.json()['detail']

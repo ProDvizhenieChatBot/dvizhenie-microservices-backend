@@ -1,6 +1,7 @@
 """
 Pytest configuration and fixtures for File Storage Service tests.
 """
+
 import io
 import os
 from collections.abc import AsyncGenerator
@@ -21,6 +22,7 @@ os.environ['AWS_SECRET_ACCESS_KEY'] = 'testing'
 os.environ['AWS_SECURITY_TOKEN'] = 'testing'
 os.environ['AWS_SESSION_TOKEN'] = 'testing'
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
+
 
 # --------------------------
 # Override settings
@@ -44,30 +46,26 @@ def s3_client() -> AsyncGenerator:
     storage = {}
 
     async def async_upload_fileobj(Fileobj, Bucket, Key):
-        content = Fileobj.read() if hasattr(Fileobj, "read") else Fileobj
+        content = Fileobj.read() if hasattr(Fileobj, 'read') else Fileobj
         storage[Key] = content
-        return {"ResponseMetadata": {"HTTPStatusCode": 200}}
+        return {'ResponseMetadata': {'HTTPStatusCode': 200}}
 
     async def async_head_object(Bucket, Key):
         if Key not in storage:
             from botocore.exceptions import ClientError
-            raise ClientError(
-                {"Error": {"Code": "404", "Message": "Not Found"}},
-                "HeadObject"
-            )
-        return {"ResponseMetadata": {"HTTPStatusCode": 200}}
+
+            raise ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, 'HeadObject')
+        return {'ResponseMetadata': {'HTTPStatusCode': 200}}
 
     async def async_get_object(Bucket, Key):
         if Key not in storage:
             from botocore.exceptions import ClientError
-            raise ClientError(
-                {"Error": {"Code": "404", "Message": "Not Found"}},
-                "GetObject"
-            )
-        return {"Body": io.BytesIO(storage[Key])}
+
+            raise ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, 'GetObject')
+        return {'Body': io.BytesIO(storage[Key])}
 
     def generate_presigned_url(ClientMethod, Params, ExpiresIn):
-        return f"{settings.S3_PUBLIC_URL}/{Params['Key']}?X-Amz-Test"
+        return f'{settings.S3_PUBLIC_URL}/{Params["Key"]}?X-Amz-Test'
 
     client.upload_fileobj.side_effect = async_upload_fileobj
     client.head_object.side_effect = async_head_object
