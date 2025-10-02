@@ -10,6 +10,7 @@ dependencies = [
     "pydantic-settings==2.2.1",
     "aioboto3==13.1.0",
     "types-aioboto3[s3]==15.1.0",
+    "python-multipart",
 ]
 
 [project.optional-dependencies]
@@ -17,7 +18,6 @@ dev = [
     "ruff==0.13.1",
     "pyright==1.1.405",
     "pytest==8.2.2",
-    # Use the latest stable version of moto
     "moto[s3]==5.0.5",
     "pytest-asyncio==0.23.7",
     "pytest-dotenv==0.5.2",
@@ -111,6 +111,6 @@ addopts = [
     "--cov-report=html",
     "--cov-branch",
 ]
-dotenv_files = [
+env_files = [
     "../../.env"
 ]
