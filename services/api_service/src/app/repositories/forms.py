@@ -32,7 +32,7 @@ class FormSchemaRepository:
         )
         self.session.add(new_schema)
 
-        await self.session.flush()
+        await self.session.commit()
 
         await self.session.refresh(new_schema)
 
