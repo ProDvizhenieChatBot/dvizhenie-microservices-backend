@@ -11,9 +11,7 @@ from aiogram import types
 @pytest.fixture
 def mock_message() -> MagicMock:
     """Provides a mock Aiogram Message object with a mocked `answer` method."""
-    # The message object itself can be a regular MagicMock
     message = MagicMock(spec=types.Message)
-    # The method we await must be an AsyncMock
     message.answer = AsyncMock()
     message.from_user = MagicMock(spec=types.User)
     message.from_user.id = 123456789

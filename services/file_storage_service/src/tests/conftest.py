@@ -14,9 +14,6 @@ from app.core.config import settings
 from app.main import app
 
 
-# --------------------------
-# Set dummy AWS credentials
-# --------------------------
 os.environ['AWS_ACCESS_KEY_ID'] = 'testing'
 os.environ['AWS_SECRET_ACCESS_KEY'] = 'testing'
 os.environ['AWS_SECURITY_TOKEN'] = 'testing'
@@ -24,9 +21,6 @@ os.environ['AWS_SESSION_TOKEN'] = 'testing'
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 
 
-# --------------------------
-# Override settings
-# --------------------------
 @pytest.fixture(autouse=True)
 def mock_settings(monkeypatch):
     monkeypatch.setattr('app.core.config.settings.S3_ENDPOINT_URL', 'http://localhost:9000')
@@ -34,9 +28,6 @@ def mock_settings(monkeypatch):
     monkeypatch.setattr('app.core.config.settings.MINIO_BUCKET_NAME', 'test-bucket')
 
 
-# --------------------------
-# Mocked async S3 client
-# --------------------------
 @pytest.fixture
 def s3_client() -> AsyncGenerator:
     """
@@ -75,9 +66,6 @@ def s3_client() -> AsyncGenerator:
     return client
 
 
-# --------------------------
-# Async test HTTP client
-# --------------------------
 @pytest.fixture
 async def test_client(s3_client) -> AsyncGenerator[AsyncClient, None]:
     """
