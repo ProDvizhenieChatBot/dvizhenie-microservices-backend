@@ -88,28 +88,34 @@ class TestZipService:
         mock_client = AsyncMock()
         mock_client_class.return_value.__aenter__.return_value = mock_client
 
-        # Mock the download link response
+        # --- FIX: Mock the download link response ---
+        # The response object for the link request
         link_response = AsyncMock()
         link_response.raise_for_status = MagicMock()
-        link_response.json.return_value = {
-            'download_url': 'http://localhost:9000/bucket/file1.pdf?signature=xyz'
-        }
+        # CRUCIAL FIX: .json() is a SYNCHRONOUS method. We replace the default
+        # AsyncMock attribute with a synchronous MagicMock.
+        link_response.json = MagicMock(
+            return_value={'download_url': 'http://localhost:9000/bucket/file1.pdf?signature=xyz'}
+        )
 
-        # Mock the file content response
+        # --- Mock the file content response ---
+        # The response object for the actual file download
         content_response = AsyncMock()
         content_response.raise_for_status = MagicMock()
         content_response.content = b'fake pdf content'
 
-        # Set up mock client to return different responses
+        # Set up the mock client to return the different responses in sequence
         mock_client.get.side_effect = [
-            link_response,  # First call for link
-            content_response,  # Second call for content
-            link_response,  # Third call for link (second file)
-            content_response,  # Fourth call for content (second file)
+            link_response,  # First call gets the link
+            content_response,  # Second call gets the file content
+            link_response,  # Third call gets the link for the second file
+            content_response,  # Fourth call gets the content for the second file
         ]
 
+        # Call the actual service function with the mocked application and settings
         result = await create_documents_zip_archive(application_with_mock_files, mock_settings)
 
+        # Assertions remain the same
         assert isinstance(result, io.BytesIO)
         assert len(result.getvalue()) > 0
 
